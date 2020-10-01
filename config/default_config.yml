@@ -1,0 +1,36 @@
+##############################################################################
+#### Path definition
+##############################################################################
+
+# Need to provide the absolute path to the various input dataset and
+# to desired directories for saving the output
+# these should be in absolute path to the directory
+# e.g. '/home/jsmith/project1/data/'
+
+d_data: ''
+d_model: ''
+d_output: ''
+
+##############################################################################
+#### Preprocessing variables
+##############################################################################
+
+# New sampling rate to downsample the dataset into
+new_fs: 100
+
+# length of data in seconds to split into each epoch
+# which is fed into the network as a single sample
+len_epoch: 3
+
+# n times the median absolute deviation to be used
+# as the threshold for outlier rejection
+mad_threshold: 5
+
+# percentage of all epochs in the training set
+per_training: 0.7
+
+# percentage of all epochs in the validation set
+per_valid: 0.15
+
+# percentage of all epochs in the test set
+per_test: 0.15
