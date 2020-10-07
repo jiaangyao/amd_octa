@@ -1,0 +1,5 @@
+tensorflow==2.3.0
+tensorflow-gpu==2.3.0
+matplotlib
+pyyaml
+easydict

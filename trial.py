@@ -82,6 +82,12 @@ plt.ylabel('Accuracy')
 plt.show()
 
 # Now perform prediction
+score = model.evaluate(Xs[2], ys[2], callbacks=callbacks, verbose=0)
+print("Test loss: {:2f}".format(score[0]))
+print("Test acc: {}".format(score[1]))
+
 y_test_pred = np.round(model.predict(Xs[2], callbacks=callbacks)).astype(np.int32).reshape(-1)
 test_acc = np.mean(ys[2] == y_test_pred)
 print("Test acc: {}".format(test_acc))
+
+print('nothing')
