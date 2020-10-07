@@ -18,6 +18,19 @@ cfg.label_healthy = 0
 cfg.str_dry_amd = 'dryAMDPatient'
 cfg.label_dry_amd = 1
 
+cfg.num_octa = 5
+cfg.str_angiography = 'Angiography'
+cfg.str_structural = 'Structure'
+cfg.str_bscan = 'B-Scan'
+
+cfg.vec_str_layer = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
+cfg.dict_layer_order = {'Deep': 0,
+                        'Avascular': 1,
+                        'ORCC': 2,
+                        'Choriocapillaris': 3,
+                        'Choroid': 4}
+cfg.str_bscan_layer = 'Flow'
+
 cfg.downscale_size = [350, 350]
 cfg.per_train = 0.6
 cfg.per_valid = 0.2
@@ -25,22 +38,28 @@ cfg.per_test = 0.2
 
 cfg.n_epoch = 100
 cfg.batch_size = 1
-cfg.es_patience = 5
+cfg.es_patience = 10
 cfg.es_min_delta = 1e-5
-cfg.lr = 1e-5
+cfg.lr = 1e-3
 
-vec_idx_run_healthy = np.append(np.arange(1, 8, 1), 10)
-vec_idx_run_dry_amd = np.arange(24, 32, 1)
+vec_idx_healthy = [1, 10]
+vec_idx_dry_amd = [24, 31]
 
 # Preprocessing
-Xs, ys = preprocess(vec_idx_run_healthy, vec_idx_run_dry_amd, cfg)
+Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, cfg)
 
 # Get and train model
+# from model import structure_conv3d, angiography_conv3d, bscan_conv2d
+#
+# t1 = structure_conv3d('arch_001', cfg)
+# t2 = angiography_conv3d('arch_001', cfg)
+# t3 = bscan_conv2d('arch_001', cfg)
+
 model = get_model('arch_001', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=1, callbacks=callbacks,
-              validation_data=(Xs[1], ys[1]), shuffle=True, validation_batch_size=Xs[1].shape[0])
+              validation_data=(Xs[1], ys[1]), shuffle=True, validation_batch_size=Xs[1][0].shape[0])
 
 plt.figure()
 plt.plot(np.arange(1, len(h.history['loss']) + 1, 1), h.history['loss'])
