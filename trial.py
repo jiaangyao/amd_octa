@@ -10,13 +10,16 @@ from model import get_model, get_callbacks
 
 # Configuring the files here for now
 cfg = get_config(filename=Path(os.getcwd()) / 'config' / 'default_config.yml')
-cfg.d_data = Path('/home/jyao/Local/amd_octa/raw_data/')
+cfg.d_data = Path('/home/jyao/Local/amd_octa/')
 cfg.d_model = Path('/home/jyao/Local/amd_octa/trained_models/')
 
-cfg.str_healthy = 'normalPatient'
+cfg.str_healthy = 'Normal'
 cfg.label_healthy = 0
-cfg.str_dry_amd = 'dryAMDPatient'
+cfg.str_dry_amd = 'Dry AMD'
 cfg.label_dry_amd = 1
+cfg.str_cnv = 'CNV'
+cfg.label_cnv = 2
+cfg.num_classes = 3
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
@@ -32,21 +35,22 @@ cfg.dict_layer_order = {'Deep': 0,
 cfg.str_bscan_layer = 'Flow'
 
 cfg.downscale_size = [350, 350]
-cfg.per_train = 0.6
-cfg.per_valid = 0.2
-cfg.per_test = 0.2
+cfg.per_train = 0.8
+cfg.per_valid = 0.1
+cfg.per_test = 0.1
 
 cfg.n_epoch = 100
 cfg.batch_size = 1
-cfg.es_patience = 10
+cfg.es_patience = 3
 cfg.es_min_delta = 1e-5
 cfg.lr = 1e-3
 
-vec_idx_healthy = [1, 10]
-vec_idx_dry_amd = [24, 31]
+vec_idx_healthy = [1, 150]
+vec_idx_dry_amd = [1, 150]
+vec_idx_cnv = [1, 150]
 
 # Preprocessing
-Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, cfg)
+Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg)
 
 # Get and train model
 # from model import structure_conv3d, angiography_conv3d, bscan_conv2d
@@ -58,7 +62,7 @@ Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, cfg)
 model = get_model('arch_001', cfg)
 callbacks = get_callbacks(cfg)
 
-h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=1, callbacks=callbacks,
+h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
               validation_data=(Xs[1], ys[1]), shuffle=True, validation_batch_size=Xs[1][0].shape[0])
 
 plt.figure()

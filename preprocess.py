@@ -6,24 +6,33 @@ from skimage import io, transform, color
 import pathlib
 import matplotlib.pyplot as plt
 
+from tensorflow.keras.utils import to_categorical
 
-def preprocess(vec_idx_healthy, vec_idx_dry_amd, cfg):
 
+def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
+    print('Loading data from normal patients')
     x_healthy, y_healthy = load_data(vec_idx_healthy, cfg.str_healthy, cfg.label_healthy,
                                      cfg.d_data, cfg.downscale_size, cfg.num_octa, cfg.str_angiography,
                                      cfg.str_structural, cfg.str_bscan, cfg.vec_str_layer, cfg.str_bscan_layer,
                                      cfg.dict_layer_order)
 
+    print('\nLoading data from dry AMD patients')
     x_dry_amd, y_dry_amd = load_data(vec_idx_dry_amd, cfg.str_dry_amd, cfg.label_dry_amd,
                                      cfg.d_data, cfg.downscale_size, cfg.num_octa, cfg.str_angiography,
                                      cfg.str_structural, cfg.str_bscan, cfg.vec_str_layer, cfg.str_bscan_layer,
                                      cfg.dict_layer_order)
 
+    print('\nLoading data from CNV patients')
+    x_cnv, y_cnv = load_data(vec_idx_cnv, cfg.str_cnv, cfg.label_cnv,
+                             cfg.d_data, cfg.downscale_size, cfg.num_octa, cfg.str_angiography,
+                             cfg.str_structural, cfg.str_bscan, cfg.vec_str_layer, cfg.str_bscan_layer,
+                             cfg.dict_layer_order)
+
     # unpack once more
-    x_angiography = np.append(x_healthy[0], x_dry_amd[0], axis=0)
-    x_structure = np.append(x_healthy[1], x_dry_amd[1], axis=0)
-    x_bscan = np.append(x_healthy[2], x_dry_amd[2], axis=0)
-    y = np.append(y_healthy, y_dry_amd, axis=0)
+    x_angiography = np.concatenate((x_healthy[0], x_dry_amd[0], x_cnv[0]), axis=0)
+    x_structure = np.concatenate((x_healthy[1], x_dry_amd[1], x_cnv[1]), axis=0)
+    x_bscan = np.concatenate((x_healthy[2], x_dry_amd[2], x_cnv[2]), axis=0)
+    y = np.concatenate((y_healthy, y_dry_amd, y_cnv), axis=0)
 
     # TODO: might want to get a separate function for this
     # shuffle
@@ -32,6 +41,9 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, cfg):
     x_structure = x_structure[idx_permutation, :, :, :, :]
     x_bscan = x_bscan[idx_permutation, :, :, :]
     y = y[idx_permutation]
+
+    # convert the labels to onehot encoding
+    y = to_categorical(y, num_classes=cfg.num_classes)
 
     # split into train, validation and test
     n_train = int(np.ceil(len(idx_permutation) * cfg.per_train))
@@ -105,14 +117,14 @@ def load_data(vec_idx, str_class, label_class, d_data, downscale_size, num_octa,
 
     # Loop through all the runs
     for i in range(len(vec_full_idx)):
-        vec_f_image = glob.glob(str(d_data / "{}{}".format(str_class, vec_full_idx[i]) / '**' / '*.bmp'),
+        vec_f_image = glob.glob(str(d_data / str_class / '[Pp]atient {}'.format(vec_full_idx[i]) / '**' / '*.bmp'),
                                 recursive=True)
 
         if vec_f_image:
             print("Loading data from patient {}".format(vec_full_idx[i]))
 
         else:
-            print("Data not available for patient {}, skipping...".format(vec_full_idx[i]))
+            # print("Data not available for patient {}, skipping...".format(vec_full_idx[i]))
             continue
 
         packed_x_curr = package_data(vec_f_image, downscale_size, num_octa, str_angiography, str_structural,
