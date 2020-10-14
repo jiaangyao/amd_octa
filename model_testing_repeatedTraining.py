@@ -67,7 +67,7 @@ for i in range(cfg.n_repeats):
     # Preprocessing
     Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg)
 
-    model = get_model('arch_007', cfg)
+    model = get_model('arch_002', cfg)
     callbacks = get_callbacks(cfg)
 
     h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
@@ -87,6 +87,9 @@ for i in range(cfg.n_repeats):
 
     vec_y_true.append(y_true)
     vec_y_pred.append(y_pred)
+    
+    Xs = []
+    ys = []
 
 print("Average train set accuracy: {} + ".format(np.mean(vec_train_acc)), np.std(vec_train_acc))
 print("Average valid set accuracy: {} + ".format(np.mean(vec_valid_acc)), np.std(vec_valid_acc))

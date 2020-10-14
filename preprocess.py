@@ -34,8 +34,23 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
     x_bscan = np.concatenate((x_healthy[2], x_dry_amd[2], x_cnv[2]), axis=0)
     y = np.concatenate((y_healthy, y_dry_amd, y_cnv), axis=0)
 
-    # TODO: might want to get a separate function for this
-    # shuffle
+    # clearing the variables for memory purposes
+    x_healthy = []
+    y_healthy = []
+
+    x_dry_amd = []
+    y_dry_amd = []
+
+    x_cnv = []
+    y_cnv = []
+
+    Xs, ys = _split_data(x_angiography, x_structure, x_bscan, y, cfg)
+
+    return Xs, ys
+
+
+def _split_data(x_angiography, x_structure, x_bscan, y, cfg):
+
     idx_permutation = np.random.permutation(x_angiography.shape[0])
     x_angiography = x_angiography[idx_permutation, :, :, :, :]
     x_structure = x_structure[idx_permutation, :, :, :, :]
