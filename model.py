@@ -422,7 +422,7 @@ def get_model(str_model, cfg):
 
         number of parameters: 912k
 
-        Train, valid, test acc: [79.0+4.6, 70.4+8.0, 63.9+8.2] (avg + standard error)
+        Train, valid, test acc: [n/a, n/a, n/a] (avg + standard error)
 
         lr is too high?
         think of doing global average pooling 
