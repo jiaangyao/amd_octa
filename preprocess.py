@@ -57,9 +57,9 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
     x_valid = [x_angiography_valid, x_structure_valid, x_bscan_valid]
     x_test = [x_angiography_test, x_structure_test, x_bscan_test]
 
-    y_train = y[: n_train]
-    y_valid = y[n_train: n_train + n_valid]
-    y_test = y[n_train + n_valid:]
+    y_train = y[: n_train, :]
+    y_valid = y[n_train: n_train + n_valid, :]
+    y_test = y[n_train + n_valid:, :]
 
     cfg.sample_size = [x_angiography_train.shape[1:], x_bscan_train.shape[1:]]
 
