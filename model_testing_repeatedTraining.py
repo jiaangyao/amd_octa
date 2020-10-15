@@ -37,7 +37,7 @@ cfg.dict_layer_order = {'Deep': 0,
                         'Choroid': 4}
 cfg.str_bscan_layer = 'Flow'
 
-cfg.downscale_size = [512, 512]
+cfg.downscale_size = [256, 256]
 cfg.per_train = 0.6
 cfg.per_valid = 0.2
 cfg.per_test = 0.2
@@ -48,8 +48,10 @@ cfg.es_patience = 20
 cfg.es_min_delta = 1e-5
 cfg.lr = 5e-5
 cfg.lam = 1e-5
+cfg.oversample = False
+cfg.oversample_method = 'smote'
 
-cfg.n_repeats = 3
+cfg.n_repeats = 10
 
 vec_idx_healthy = [1, 150]
 vec_idx_dry_amd = [1, 150]
@@ -67,7 +69,7 @@ for i in range(cfg.n_repeats):
     # Preprocessing
     Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg)
 
-    model = get_model('arch_002', cfg)
+    model = get_model('arch_010', cfg)
     callbacks = get_callbacks(cfg)
 
     h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
@@ -87,7 +89,7 @@ for i in range(cfg.n_repeats):
 
     vec_y_true.append(y_true)
     vec_y_pred.append(y_pred)
-    
+
     Xs = []
     ys = []
 

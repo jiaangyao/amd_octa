@@ -37,7 +37,7 @@ cfg.dict_layer_order = {'Deep': 0,
                         'Choroid': 4}
 cfg.str_bscan_layer = 'Flow'
 
-cfg.downscale_size = [512, 512]
+cfg.downscale_size = [256, 256]
 cfg.per_train = 0.6
 cfg.per_valid = 0.2
 cfg.per_test = 0.2
@@ -48,6 +48,8 @@ cfg.es_patience = 20
 cfg.es_min_delta = 1e-5
 cfg.lr = 5e-5
 cfg.lam = 1e-5
+cfg.oversample = False
+cfg.oversample_method = 'smote'
 
 vec_idx_healthy = [1, 150]
 vec_idx_dry_amd = [1, 150]
@@ -78,7 +80,7 @@ print("y_test onehot shape: {}".format(ys[2].shape))
 # t2 = angiography_conv3d('arch_001', cfg)
 # t3 = bscan_conv2d('arch_001', cfg)
 
-model = get_model('arch_007', cfg)
+model = get_model('arch_010', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
@@ -141,7 +143,7 @@ ax.set(xticks=np.arange(len(cfg.vec_str_labels)),
        yticklabels=cfg.vec_str_labels,
        ylabel="True label",
        xlabel="Predicted label")
-
+plt.show()
 
 ## Confusion matrix
 ## and model visualization
