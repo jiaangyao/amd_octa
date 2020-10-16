@@ -730,6 +730,20 @@ def get_model(str_model, cfg):
         worse with dry AMD but okay for the others...
 
         Train, valid, test acc: [86.8+5.4, 78.1+7.7, 68.1+7.8] (avg + standard error)
+        
+        Test 2: 10 repeated runs
+        cfg.lr = 5e-5
+        cfg.lam = 1e-5
+        cfg.downscale_size = [256, 256]
+
+        balanced sample
+        no SMOTE
+
+        number of parameters: 121k
+
+        worse with dry AMD but okay for the others...
+
+        Train, valid, test acc: [87.6+5.6, 75.0+7.3, 69.6+5.7] (avg + standard error)
 
         """
 
