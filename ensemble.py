@@ -51,7 +51,7 @@ cfg.lam = 1e-5
 cfg.oversample = False
 cfg.oversample_method = 'smote'
 
-cfg.n_repeats = 10
+cfg.n_ensemble = 5
 
 vec_idx_healthy = [1, 150]
 vec_idx_dry_amd = [1, 150]
@@ -64,12 +64,13 @@ vec_test_acc = []
 vec_y_true = []
 vec_y_pred = []
 vec_model = []
-for i in range(cfg.n_repeats):
+
+# Preprocessing
+Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg)
+
+for i in range(cfg.n_ensemble):
 
     print("\n\nIteration: {}".format(i + 1))
-    # Preprocessing
-    Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg)
-
     model = get_model('arch_011', cfg)
     callbacks = get_callbacks(cfg)
 
@@ -91,8 +92,7 @@ for i in range(cfg.n_repeats):
     vec_y_true.append(y_true)
     vec_y_pred.append(y_pred)
 
-    Xs = []
-    ys = []
+    vec_model.append(model)
 
 print("Average train set accuracy: {} + ".format(np.mean(vec_train_acc)), np.std(vec_train_acc))
 print("Average valid set accuracy: {} + ".format(np.mean(vec_valid_acc)), np.std(vec_valid_acc))
@@ -119,6 +119,49 @@ for i, j in itertools.product(range(conf_matrix_norm.shape[0]),
     plt.text(j, i, "{:0.4f}".format(conf_matrix_norm[i, j]),
              horizontalalignment="center",
              color="white" if conf_matrix_norm[i, j] > thresh else "black")
+
+plt.tight_layout()
+
+ax = plt.gca()
+ax.set(xticks=np.arange(len(cfg.vec_str_labels)),
+       yticks=np.arange(len(cfg.vec_str_labels)),
+       xticklabels=cfg.vec_str_labels,
+       yticklabels=cfg.vec_str_labels,
+       ylabel="True label",
+       xlabel="Predicted label")
+
+plt.show()
+
+mat_pred = []
+
+for i in range(len(vec_model)):
+    curr_model = vec_model[i]
+    y_pred_curr = np.argmax(curr_model.predict(Xs[2]), axis=1)
+
+    mat_pred.append(y_pred_curr)
+mat_pred = np.stack(mat_pred, axis=0)
+
+from scipy.stats import mode
+y_pred_mode = mode(mat_pred, axis=0).mode.reshape(-1)
+y_true_alt = np.argmax(ys[-1], axis=1)
+ensemble_acc = np.sum(y_pred_mode == y_true_alt) / len(y_true_alt)
+
+conf_matrix_ensemble = confusion_matrix(y_true_alt, y_pred_mode)
+conf_matrix_ensemble_norm = conf_matrix_ensemble.astype('float') / conf_matrix_ensemble.sum(axis=1)[:, np.newaxis]
+
+cmap = plt.get_cmap('Blues')
+fig = plt.figure(figsize=(8, 6))
+plt.imshow(conf_matrix_ensemble_norm, interpolation='nearest', cmap=cmap)
+plt.title('Normalized Confusion Matrix')
+plt.colorbar()
+
+thresh = np.max(conf_matrix_ensemble_norm) / 1.5
+for i, j in itertools.product(range(conf_matrix_ensemble_norm.shape[0]),
+                              range(conf_matrix_ensemble_norm.shape[1])):
+
+    plt.text(j, i, "{:0.4f}".format(conf_matrix_ensemble_norm[i, j]),
+             horizontalalignment="center",
+             color="white" if conf_matrix_ensemble_norm[i, j] > thresh else "black")
 
 plt.tight_layout()
 
