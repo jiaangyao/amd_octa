@@ -5,8 +5,9 @@ import numpy as np
 from skimage import io, transform, color
 import pathlib
 import matplotlib.pyplot as plt
-
 from tensorflow.keras.utils import to_categorical
+
+from context_management import temp_seed
 
 
 def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
@@ -53,6 +54,19 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
             x_structure_rs, y_rs_alt = sm.fit_resample(x_structure_rs, y)
             x_bscan_rs, y_rs_alt_alt = sm.fit_resample(x_bscan_rs, y)
 
+            angio_shape = [x_angiography_rs.shape[0]]
+            angio_shape.extend(list(x_angiography.shape[1:]))
+
+            structure_shape = [x_structure_rs.shape[0]]
+            structure_shape.extend(list(x_structure.shape[1:]))
+
+            bscan_shape = [x_bscan_rs.shape[0]]
+            bscan_shape.extend(list(x_bscan.shape[1:]))
+
+            x_angiography_rs = x_angiography_rs.reshape(angio_shape)
+            x_structure_rs = x_structure_rs.reshape(structure_shape)
+            x_bscan_rs = x_bscan_rs.reshape(bscan_shape)
+
             if not (np.allclose(y_rs, y_rs_alt) and np.allclose(y_rs, y_rs_alt_alt)):
                 raise Exception("Issues with SMOTE")
 
@@ -70,10 +84,17 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
     y_cnv = []
 
     if not cfg.oversample:
-        Xs, ys = _split_data(x_angiography, x_structure, x_bscan, y, cfg)
-
+        if cfg.use_random_seed:
+            with temp_seed(cfg.random_seed):
+                Xs, ys = _split_data(x_angiography, x_structure, x_bscan, y, cfg)
+        else:
+            Xs, ys = _split_data(x_angiography, x_structure, x_bscan, y, cfg)
     else:
-        Xs, ys = _split_data(x_angiography_rs, x_structure_rs, x_bscan_rs, y, cfg)
+        if cfg.use_random_seed:
+            with temp_seed(cfg.random_seed):
+                Xs, ys = _split_data(x_angiography_rs, x_structure_rs, x_bscan_rs, y_rs, cfg)
+        else:
+            Xs, ys = _split_data(x_angiography_rs, x_structure_rs, x_bscan_rs, y_rs, cfg)
 
     return Xs, ys
 
@@ -245,6 +266,10 @@ def load_data(vec_idx, str_class, label_class, d_data, downscale_size, num_octa,
     for i in range(len(vec_full_idx)):
         vec_f_image = glob.glob(str(d_data / str_class / '[Pp]atient {}'.format(vec_full_idx[i]) / '**' / '*.bmp'),
                                 recursive=True)
+
+        if len(vec_f_image) == 0:
+            vec_f_image = glob.glob(str(d_data / str_class / '[Pp]atient {} - *'.format(vec_full_idx[i]) / '**' / '*.bmp'),
+                                    recursive=True)
 
         if vec_f_image:
             print("Loading data from patient {}".format(vec_full_idx[i]))

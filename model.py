@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Flatten, Conv3D, Conv2D, AvgPool2D, MaxPooling3D, Dropout, BatchNormalization
-from tensorflow.keras.layers import Input, LeakyReLU, ReLU, Concatenate, MaxPool2D, Add, GlobalAveragePooling3D
+from tensorflow.keras.layers import Input, LeakyReLU, ReLU, Concatenate, concatenate, MaxPool2D, Add, GlobalAveragePooling3D
 from tensorflow.keras.optimizers import Adam, RMSprop, SGD
 from tensorflow.keras.regularizers import l1, l2
 from tensorflow.keras.callbacks import EarlyStopping
@@ -744,6 +744,20 @@ def get_model(str_model, cfg):
         worse with dry AMD but okay for the others...
 
         Train, valid, test acc: [87.6+5.6, 75.0+7.3, 69.6+5.7] (avg + standard error)
+        
+        Test 3: 10 repeated runs
+        cfg.lr = 5e-5
+        cfg.lam = 1e-5
+        cfg.downscale_size = [256, 256]
+
+        balanced sample
+        no SMOTE
+
+        number of parameters: 121k
+
+        with additional data
+
+        Train, valid, test acc: [84.5+5.3, 64.5+9.0, 63.6+9.1] (avg + standard error)
 
         """
 
@@ -799,7 +813,7 @@ def get_model(str_model, cfg):
 
     if str_model == 'arch_010':
         """
-        Test 1: 5 repeated runs
+        Test 1: 3 repeated runs
         cfg.lr = 5e-5
         cfg.lam = 1e-5
         cfg.downscale_size = [256, 256]
@@ -809,6 +823,17 @@ def get_model(str_model, cfg):
 
         number of parameters: 241k
         Train, valid, test acc: [88.1+10.4, 69.4+10.9, 67.5+10.5] (avg + standard error)
+        
+        Test 2: 10 repeated runs
+        cfg.lr = 5e-5
+        cfg.lam = 1e-5
+        cfg.downscale_size = [256, 256]
+
+        balanced sample
+        no SMOTE
+
+        number of parameters: 241k
+        Train, valid, test acc: [87.6+4.5, 70.6+8.7, 73.8+6.5] (avg + standard error)
 
         """
 

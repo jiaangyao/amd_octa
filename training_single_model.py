@@ -50,10 +50,12 @@ cfg.lr = 5e-5
 cfg.lam = 1e-5
 cfg.oversample = False
 cfg.oversample_method = 'smote'
+cfg.random_seed = 68
+cfg.use_random_seed = True
 
-vec_idx_healthy = [1, 150]
-vec_idx_dry_amd = [1, 150]
-vec_idx_cnv = [1, 150]
+vec_idx_healthy = [1, 250]
+vec_idx_dry_amd = [1, 250]
+vec_idx_cnv = [1, 250]
 
 # Preprocessing
 Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg)
@@ -80,7 +82,7 @@ print("y_test onehot shape: {}".format(ys[2].shape))
 # t2 = angiography_conv3d('arch_001', cfg)
 # t3 = bscan_conv2d('arch_001', cfg)
 
-model = get_model('arch_010', cfg)
+model = get_model('arch_009', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
