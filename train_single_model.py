@@ -1,13 +1,12 @@
 import os
 from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
 
 from config.load_config import get_config
 from preprocess import preprocess
 from model import get_model, get_callbacks
-from sklearn.metrics import confusion_matrix
-import itertools
+from utils.io_funcs import *
+from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix, plot_norm_conf_matrix
 
 
 # Configuring the files here for now
@@ -26,7 +25,7 @@ cfg.vec_str_labels = ['Normal', 'Dry Amd', 'CNV']
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
-cfg.str_structural = 'Structure'
+cfg.str_structure = 'Structure'
 cfg.str_bscan = 'B-Scan'
 
 cfg.vec_str_layer = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
@@ -48,10 +47,14 @@ cfg.es_patience = 20
 cfg.es_min_delta = 1e-5
 cfg.lr = 5e-5
 cfg.lam = 1e-5
+cfg.overwrite = True
+
+cfg.balanced = True
 cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.random_seed = 68
 cfg.use_random_seed = True
+cfg.binary_class = False
 
 vec_idx_healthy = [1, 250]
 vec_idx_dry_amd = [1, 250]
@@ -76,33 +79,18 @@ print("x_test B scan shape: {}".format(Xs[2][2].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-# from model import structure_conv3d, angiography_conv3d, bscan_conv2d
-#
-# t1 = structure_conv3d('arch_001', cfg)
-# t2 = angiography_conv3d('arch_001', cfg)
-# t3 = bscan_conv2d('arch_001', cfg)
-
-model = get_model('arch_009', cfg)
+model = get_model('arch_014', cfg)
 callbacks = get_callbacks(cfg)
+
+load_model(model, cfg, '20201021_000442')
+saved_cfg = load_config(cfg, '20201021_000442')
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
               validation_data=(Xs[1], ys[1]), shuffle=False, validation_batch_size=Xs[1][0].shape[0])
+cfg.history = h.history
 
-plt.figure()
-plt.plot(np.arange(1, len(h.history['loss']) + 1, 1), h.history['loss'])
-plt.plot(np.arange(1, len(h.history['val_loss']) + 1, 1), h.history['val_loss'])
-plt.title("Loss history in training")
-plt.xlabel('Training Iterations')
-plt.ylabel('Loss')
-plt.show()
-
-plt.figure()
-plt.plot(np.arange(1, len(h.history['accuracy']) + 1, 1), h.history['accuracy'])
-plt.plot(np.arange(1, len(h.history['val_accuracy']) + 1, 1), h.history['val_accuracy'])
-plt.title("Accuracy history in training")
-plt.xlabel('Training Iterations')
-plt.ylabel('Accuracy')
-plt.show()
+plot_training_loss(h)
+plot_training_acc(h)
 
 # Now perform prediction
 train_set_score = model.evaluate(Xs[0], ys[0], callbacks=callbacks, verbose=0)
@@ -115,38 +103,14 @@ print("Average test set accuracy: {}".format(test_set_score[1]))
 
 y_true = np.argmax(ys[-1], axis=1)
 y_pred = np.argmax(model.predict(Xs[2]), axis=1)
-conf_matrix = confusion_matrix(y_true, y_pred)
 
-# plot the confusion matrix
-# normalize the matrix first
-conf_matrix_norm = conf_matrix.astype('float') / conf_matrix.sum(axis=1)[:, np.newaxis]
+cfg.y_test_true = y_true
+cfg.y_test_pred = y_pred
 
-# plot the matrix
-cmap = plt.get_cmap('Blues')
-fig = plt.figure(figsize=(8, 6))
-plt.imshow(conf_matrix_norm, interpolation='nearest', cmap=cmap)
-plt.title('Normalized Confusion Matrix cnn_ensemble')
-plt.colorbar()
+plot_raw_conf_matrix(y_true, y_pred, cfg)
+plot_norm_conf_matrix(y_true, y_pred, cfg)
 
-thresh = np.max(conf_matrix_norm) / 1.5
-for i, j in itertools.product(range(conf_matrix_norm.shape[0]),
-                              range(conf_matrix_norm.shape[1])):
+# save trained models
+save_model(model, cfg, overwrite=True, save_format='tf')
 
-    plt.text(j, i, "{:0.4f}".format(conf_matrix_norm[i, j]),
-             horizontalalignment="center",
-             color="white" if conf_matrix_norm[i, j] > thresh else "black")
-
-plt.tight_layout()
-
-ax = plt.gca()
-ax.set(xticks=np.arange(len(cfg.vec_str_labels)),
-       yticks=np.arange(len(cfg.vec_str_labels)),
-       xticklabels=cfg.vec_str_labels,
-       yticklabels=cfg.vec_str_labels,
-       ylabel="True label",
-       xlabel="Predicted label")
-plt.show()
-
-## Confusion matrix
-## and model visualization
 print('nothing')

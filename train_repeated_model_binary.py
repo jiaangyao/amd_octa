@@ -5,28 +5,24 @@ import matplotlib.pyplot as plt
 
 from config.load_config import get_config
 from preprocess import preprocess
-from model import get_model, get_callbacks
-from sklearn.metrics import confusion_matrix
-import itertools
-
+from model import get_model, get_callbacks, get_model_binary
+from plotting import plot_norm_conf_matrix, plot_raw_conf_matrix
 
 # Configuring the files here for now
 cfg = get_config(filename=Path(os.getcwd()) / 'config' / 'default_config.yml')
 cfg.d_data = Path('/home/jyao/Local/amd_octa/')
 cfg.d_model = Path('/home/jyao/Local/amd_octa/trained_models/')
 
-cfg.str_healthy = 'Normal'
-cfg.label_healthy = 0
 cfg.str_dry_amd = 'Dry AMD'
-cfg.label_dry_amd = 1
+cfg.label_dry_amd = 0
 cfg.str_cnv = 'CNV'
-cfg.label_cnv = 2
-cfg.num_classes = 3
-cfg.vec_str_labels = ['Normal', 'Dry Amd', 'CNV']
+cfg.label_cnv = 1
+cfg.num_classes = 2
+cfg.vec_str_labels = ['Dry Amd', 'CNV']
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
-cfg.str_structural = 'Structure'
+cfg.str_structure = 'Structure'
 cfg.str_bscan = 'B-Scan'
 
 cfg.vec_str_layer = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
@@ -48,13 +44,15 @@ cfg.es_patience = 20
 cfg.es_min_delta = 1e-5
 cfg.lr = 5e-5
 cfg.lam = 1e-5
+cfg.balanced = False
 cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.decimate = False
 cfg.random_seed = 68
 cfg.use_random_seed = False
+cfg.binary_class = True
 
-cfg.n_repeats = 10
+cfg.n_repeats = 5
 
 vec_idx_healthy = [1, 250]
 vec_idx_dry_amd = [1, 250]
@@ -103,7 +101,7 @@ for i in range(cfg.n_repeats):
 
         y_train = y_train[:n_train_decimate, :]
 
-    model = get_model('arch_010', cfg)
+    model = get_model_binary('arch_009_binary', cfg)
     callbacks = get_callbacks(cfg)
 
     if not cfg.decimate:
@@ -126,8 +124,10 @@ for i in range(cfg.n_repeats):
     vec_valid_acc.append(valid_set_score[1])
     vec_test_acc.append(test_set_score[1])
 
-    y_true = np.argmax(ys[-1], axis=1)
-    y_pred = np.argmax(model.predict(Xs[2]), axis=1)
+    y_true = ys[-1]
+    y_pred = model.predict(Xs[2])
+    y_pred[y_pred >= 0.5] = 1
+    y_pred[y_pred < 0.5] = 0
 
     vec_y_true.append(y_true)
     vec_y_pred.append(y_pred)
@@ -141,36 +141,8 @@ print("Average test set accuracy: {} + ".format(np.mean(vec_test_acc)), np.std(v
 
 y_true = np.concatenate(vec_y_true, axis=0)
 y_pred = np.concatenate(vec_y_pred, axis=0)
-conf_matrix = confusion_matrix(y_true, y_pred)
 
-# plot the confusion matrix
-# normalize the matrix first
-conf_matrix_norm = conf_matrix.astype('float') / conf_matrix.sum(axis=1)[:, np.newaxis]
-
-cmap = plt.get_cmap('Blues')
-fig = plt.figure(figsize=(8, 6))
-plt.imshow(conf_matrix_norm, interpolation='nearest', cmap=cmap)
-plt.title('Normalized Confusion Matrix')
-plt.colorbar()
-
-thresh = np.max(conf_matrix_norm) / 1.5
-for i, j in itertools.product(range(conf_matrix_norm.shape[0]),
-                              range(conf_matrix_norm.shape[1])):
-
-    plt.text(j, i, "{:0.4f}".format(conf_matrix_norm[i, j]),
-             horizontalalignment="center",
-             color="white" if conf_matrix_norm[i, j] > thresh else "black")
-
-plt.tight_layout()
-
-ax = plt.gca()
-ax.set(xticks=np.arange(len(cfg.vec_str_labels)),
-       yticks=np.arange(len(cfg.vec_str_labels)),
-       xticklabels=cfg.vec_str_labels,
-       yticklabels=cfg.vec_str_labels,
-       ylabel="True label",
-       xlabel="Predicted label")
-
-plt.show()
+plot_raw_conf_matrix(y_true, y_pred, cfg)
+plot_norm_conf_matrix(y_true, y_pred, cfg)
 
 print('nothing')

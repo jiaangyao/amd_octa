@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from config.load_config import get_config
 from preprocess import preprocess
 from model import get_model, get_callbacks
-from sklearn.metrics import confusion_matrix
-import itertools
+from plotting import plot_norm_conf_matrix, plot_raw_conf_matrix
+from scipy.stats import mode
 
 
 # Configuring the files here for now
@@ -26,7 +26,7 @@ cfg.vec_str_labels = ['Normal', 'Dry Amd', 'CNV']
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
-cfg.str_structural = 'Structure'
+cfg.str_structure = 'Structure'
 cfg.str_bscan = 'B-Scan'
 
 cfg.vec_str_layer = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
@@ -50,6 +50,9 @@ cfg.lr = 5e-5
 cfg.lam = 1e-5
 cfg.oversample = False
 cfg.oversample_method = 'smote'
+cfg.random_seed = 68
+cfg.use_random_seed = True
+cfg.binary_class = False
 
 cfg.n_ensemble = 5
 
@@ -100,37 +103,9 @@ print("Average test set accuracy: {} + ".format(np.mean(vec_test_acc)), np.std(v
 
 y_true = np.concatenate(vec_y_true, axis=0)
 y_pred = np.concatenate(vec_y_pred, axis=0)
-conf_matrix = confusion_matrix(y_true, y_pred)
 
-# plot the confusion matrix
-# normalize the matrix first
-conf_matrix_norm = conf_matrix.astype('float') / conf_matrix.sum(axis=1)[:, np.newaxis]
-
-cmap = plt.get_cmap('Blues')
-fig = plt.figure(figsize=(8, 6))
-plt.imshow(conf_matrix_norm, interpolation='nearest', cmap=cmap)
-plt.title('Normalized Confusion Matrix')
-plt.colorbar()
-
-thresh = np.max(conf_matrix_norm) / 1.5
-for i, j in itertools.product(range(conf_matrix_norm.shape[0]),
-                              range(conf_matrix_norm.shape[1])):
-
-    plt.text(j, i, "{:0.4f}".format(conf_matrix_norm[i, j]),
-             horizontalalignment="center",
-             color="white" if conf_matrix_norm[i, j] > thresh else "black")
-
-plt.tight_layout()
-
-ax = plt.gca()
-ax.set(xticks=np.arange(len(cfg.vec_str_labels)),
-       yticks=np.arange(len(cfg.vec_str_labels)),
-       xticklabels=cfg.vec_str_labels,
-       yticklabels=cfg.vec_str_labels,
-       ylabel="True label",
-       xlabel="Predicted label")
-
-plt.show()
+plot_raw_conf_matrix(y_true, y_pred, cfg)
+plot_norm_conf_matrix(y_true, y_pred, cfg)
 
 mat_pred = []
 
@@ -141,38 +116,11 @@ for i in range(len(vec_model)):
     mat_pred.append(y_pred_curr)
 mat_pred = np.stack(mat_pred, axis=0)
 
-from scipy.stats import mode
 y_pred_mode = mode(mat_pred, axis=0).mode.reshape(-1)
 y_true_alt = np.argmax(ys[-1], axis=1)
 ensemble_acc = np.sum(y_pred_mode == y_true_alt) / len(y_true_alt)
 
-conf_matrix_ensemble = confusion_matrix(y_true_alt, y_pred_mode)
-conf_matrix_ensemble_norm = conf_matrix_ensemble.astype('float') / conf_matrix_ensemble.sum(axis=1)[:, np.newaxis]
-
-cmap = plt.get_cmap('Blues')
-fig = plt.figure(figsize=(8, 6))
-plt.imshow(conf_matrix_ensemble_norm, interpolation='nearest', cmap=cmap)
-plt.title('Normalized Confusion Matrix')
-plt.colorbar()
-
-thresh = np.max(conf_matrix_ensemble_norm) / 1.5
-for i, j in itertools.product(range(conf_matrix_ensemble_norm.shape[0]),
-                              range(conf_matrix_ensemble_norm.shape[1])):
-
-    plt.text(j, i, "{:0.4f}".format(conf_matrix_ensemble_norm[i, j]),
-             horizontalalignment="center",
-             color="white" if conf_matrix_ensemble_norm[i, j] > thresh else "black")
-
-plt.tight_layout()
-
-ax = plt.gca()
-ax.set(xticks=np.arange(len(cfg.vec_str_labels)),
-       yticks=np.arange(len(cfg.vec_str_labels)),
-       xticklabels=cfg.vec_str_labels,
-       yticklabels=cfg.vec_str_labels,
-       ylabel="True label",
-       xlabel="Predicted label")
-
-plt.show()
+plot_raw_conf_matrix(y_true_alt, y_pred_mode, cfg)
+plot_norm_conf_matrix(y_true_alt, y_pred_mode, cfg)
 
 print('nothing')
