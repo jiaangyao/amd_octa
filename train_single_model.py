@@ -52,7 +52,7 @@ cfg.overwrite = True
 cfg.balanced = True
 cfg.oversample = False
 cfg.oversample_method = 'smote'
-cfg.random_seed = 68
+cfg.random_seed = 86
 cfg.use_random_seed = True
 cfg.binary_class = False
 
@@ -79,11 +79,8 @@ print("x_test B scan shape: {}".format(Xs[2][2].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-model = get_model('arch_014', cfg)
+model = get_model('arch_009', cfg)
 callbacks = get_callbacks(cfg)
-
-load_model(model, cfg, '20201021_000442')
-saved_cfg = load_config(cfg, '20201021_000442')
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
               validation_data=(Xs[1], ys[1]), shuffle=False, validation_batch_size=Xs[1][0].shape[0])

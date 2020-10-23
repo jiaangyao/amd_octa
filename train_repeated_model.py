@@ -92,7 +92,7 @@ for i in range(cfg.n_repeats):
     print("x_test B scan shape: {}".format(Xs[2][2].shape))
     print("y_test onehot shape: {}".format(ys[2].shape))
 
-    model = get_model('arch_020', cfg)
+    model = get_model('arch_022', cfg)
     callbacks = get_callbacks(cfg)
 
     h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,

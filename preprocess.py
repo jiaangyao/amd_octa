@@ -581,4 +581,3 @@ def _create_np_cubes(np_cube, vec_vol_f_image, downscale_size):
     # TODO: code for B scan is ugly
     else:
         np_cube[:, :] = _load_individual_image(str(vec_vol_f_image[0]), downscale_size)
-

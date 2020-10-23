@@ -49,7 +49,7 @@ cfg.overwrite = True
 cfg.balanced = False
 cfg.oversample = False
 cfg.oversample_method = 'smote'
-cfg.random_seed = 68
+cfg.random_seed = 86
 cfg.use_random_seed = True
 cfg.binary_class = True
 

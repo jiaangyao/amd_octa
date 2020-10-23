@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Flatten, Conv3D, Conv2D, AvgPool2D, MaxPooling3D, Dropout, BatchNormalization, Softmax
-from tensorflow.keras.layers import Input, LeakyReLU, ReLU, Concatenate, concatenate, MaxPool2D, Add, GlobalAveragePooling3D
+from tensorflow.keras.layers import Input, LeakyReLU, ReLU, Concatenate, concatenate, MaxPool2D, Add, GlobalAveragePooling3D, AveragePooling3D
 from tensorflow.keras.optimizers import Adam, RMSprop, SGD
 from tensorflow.keras.regularizers import l1, l2
 from tensorflow.keras.callbacks import EarlyStopping
@@ -1311,45 +1311,70 @@ def get_model(str_model, cfg):
 
     if str_model == 'arch_017':
         """
-        Test 1: 5 repeated runs
+        Try to create a better angiography model
         
-        Removed stride in the end CNN layer...
+        Test 1: 5 repeated run
+            number of parameters: 400k
+            still a lot of room for improvement here.... (Here conv 3d look at two images at a time)
+
+            Train, valid, test acc: [86.8+5.4, 78.1+7.7, 68.1+7.8] (avg + standard error)
         
-        cfg.lr = 5e-5
-        cfg.lam = 1e-5
-        cfg.downscale_size = [256, 256]
-
-        balanced sample
-        no SMOTE
-
-        number of parameters: 121k
-
-        still a lot of room for improvement here....
-
-        Train, valid, test acc: [86.8+5.4, 78.1+7.7, 68.1+7.8] (avg + standard error)
+        Test 2: 5 repeated run
+            number of parameters: 400k
+            Changed to Adam... doesn't help with validation/test acc but better training acc
+            
+            Train, valid, test acc: [93.6+1.7, 67.3+5.7, 61.2+3.9] (avg + standard error)
+        
+        Test 3: 5 repeated run
+            number of parameters: 757k
+            Changed first dense layer to be 128 units
+    
+            Train, valid, test acc: [91.0+2.3, 66.9+5.2, 65.4+3.4] (avg + standard error)
+            
+        Test 4: 5 repeated run
+            number of parameters: 237k
+            Changed first dense layer to be 32 units and decreased dropout from 0.3 to 0.1
+    
+            Train, valid, test acc: [85.4+2.9, 61.2+6.8, 64.6+4.0] (avg + standard error)
+            
+        Test 4: 5 repeated run
+            number of parameters: 103k
+            restored to test 1, but now with average pooling at the end
+    
+            Train, valid, test acc: [81.7+7.2, 66.2+7.7, 63.8+12.7] (avg + standard error)
+            
+        Test 5: 5 repeated run
+            number of parameters: 103k
+            added additionally conv 3D layer in the end
+    
+            Train, valid, test acc: [87.5+2.3, 67.7+7.4, 67.3+10.7] (avg + standard error)
         """
 
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
 
-        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
-                   kernel_regularizer=l2(cfg.lam))(angiography_inputs)
+        x = Conv3D(5, kernel_size=(40, 40, 1), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(angiography_inputs)
         x = LeakyReLU()(x)
         x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
         x = Dropout(0.05)(x)
 
-        x = Conv3D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
+        x = Conv3D(10, kernel_size=(20, 20, 1), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
         x = LeakyReLU()(x)
         x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
 
-        x = Conv3D(20, kernel_size=(10, 10, 2), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
+        x = Conv3D(20, kernel_size=(10, 10, 1), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
         x = LeakyReLU()(x)
         x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
 
-        x = Conv3D(30, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
+        x = Conv3D(30, kernel_size=(5, 5, 1), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(40, kernel_size=(3, 3, 1), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
         x = LeakyReLU()(x)
         x = MaxPooling3D(pool_size=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
@@ -1465,6 +1490,240 @@ def get_model(str_model, cfg):
         #
         # x = Dense(16, kernel_initializer='he_uniform')(x)
         # x = LeakyReLU()(x)
+
+        y = Dense(cfg.num_classes, activation='softmax')(x)
+
+        model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs], outputs=y)
+        model.summary()
+
+        model.compile(optimizer=RMSprop(lr=cfg.lr), loss='categorical_crossentropy', metrics=['accuracy'])
+
+        return model
+
+    if str_model == 'arch_021':
+        """
+        Everything combined first pass
+
+        Test 1: 10 repeated runs
+        cfg.lr = 5e-5
+        cfg.lam = 1e-5
+        cfg.downscale_size = [256, 256]
+
+        balanced sample
+        no SMOTE
+
+        number of parameters: 399k
+        Train, valid, test acc: [88.1+3.9, 72.3+8.1, 71.2+1.2] (avg + standard error)
+
+        """
+
+        angiography_inputs = Input(shape=cfg.sample_size[0])
+        structure_inputs = Input(shape=cfg.sample_size[0])
+        bscan_inputs = Input(shape=cfg.sample_size[1])
+
+        # angiography pathway
+        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
+                   kernel_regularizer=l1(cfg.lam))(angiography_inputs)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.1)(x)
+
+        x = Conv3D(10, kernel_size=(10, 10, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+        x_angio = Flatten()(x)
+
+        # structural pathway
+        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(
+            structure_inputs)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv3D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(20, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(30, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        x = Dropout(0.2)(x)
+        x_struct = Flatten()(x)
+
+        # bscan pathway
+        x = Conv2D(5, kernel_size=(21, 21), kernel_initializer='he_uniform')(bscan_inputs)
+        x = ReLU()(x)
+        x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv2D(8, kernel_size=(15, 15), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv2D(10, kernel_size=(11, 11), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv2D(15, kernel_size=(7, 7), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2))(x)
+        x = Dropout(0.2)(x)
+        x_bscan = Flatten()(x)
+
+        x = Concatenate()([x_angio, x_struct, x_bscan])
+        # Dense layer
+        x = Flatten()(x)
+        x = Dropout(0.05)(x)
+
+        x = Dense(64, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.3)(x)
+
+        x = Dense(16, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+
+        y = Dense(cfg.num_classes, activation='softmax')(x)
+
+        model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs], outputs=y)
+        model.summary()
+
+        model.compile(optimizer=RMSprop(lr=cfg.lr), loss='categorical_crossentropy', metrics=['accuracy'])
+
+        return model
+
+    if str_model == 'arch_022':
+        """
+        arch_010 + arch_013
+
+        Test 1: 10 repeated runs
+        cfg.lr = 5e-5
+        cfg.lam = 1e-5
+        cfg.downscale_size = [256, 256]
+
+        balanced sample
+        no SMOTE
+
+        number of parameters: 339k
+        Train, valid, test acc: [90.4+3.2, 73.5+5.1, 68.5+7.7] (avg + standard error)
+
+        """
+
+        angiography_inputs = Input(shape=cfg.sample_size[0])
+        structure_inputs = Input(shape=cfg.sample_size[0])
+        bscan_inputs = Input(shape=cfg.sample_size[1])
+
+        # angiography pathway
+        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
+                   kernel_regularizer=l1(cfg.lam))(angiography_inputs)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.1)(x)
+
+        x = Conv3D(10, kernel_size=(10, 10, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+        x_angio = Flatten()(x)
+
+        # structural pathway
+        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
+                   kernel_regularizer=l2(cfg.lam))(structure_inputs)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l2(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+        x_struct = Flatten()(x)
+
+        # bscan pathway
+        x = Conv2D(5, kernel_size=(21, 21), kernel_initializer='he_uniform')(bscan_inputs)
+        x = ReLU()(x)
+        x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv2D(8, kernel_size=(15, 15), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv2D(10, kernel_size=(11, 11), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv2D(15, kernel_size=(7, 7), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2))(x)
+        x = Dropout(0.2)(x)
+        x_bscan = Flatten()(x)
+
+        x = Concatenate()([x_angio, x_struct, x_bscan])
+        # Dense layer
+        x = Flatten()(x)
+        x = Dropout(0.05)(x)
+
+        x = Dense(64, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.3)(x)
+
+        x = Dense(16, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
 
         y = Dense(cfg.num_classes, activation='softmax')(x)
 
