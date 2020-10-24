@@ -61,38 +61,6 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
 
         cfg.vec_str_patient = np.concatenate((vec_str_dry_amd_patient, vec_str_cnv_patient), axis=0)
 
-    if cfg.oversample:
-        if cfg.oversample_method == 'smote':
-            x_angiography_rs = x_angiography.reshape(x_angiography.shape[0], -1)
-            x_structure_rs = x_structure.reshape(x_structure.shape[0], -1)
-            x_bscan_rs = x_bscan.reshape(x_bscan.shape[0], -1)
-
-            sm = SMOTE()
-            x_angiography_rs, y_rs = sm.fit_resample(x_angiography_rs, y)
-            x_structure_rs, y_rs_alt = sm.fit_resample(x_structure_rs, y)
-            x_bscan_rs, y_rs_alt_alt = sm.fit_resample(x_bscan_rs, y)
-
-            angio_shape = [x_angiography_rs.shape[0]]
-            angio_shape.extend(list(x_angiography.shape[1:]))
-
-            structure_shape = [x_structure_rs.shape[0]]
-            structure_shape.extend(list(x_structure.shape[1:]))
-
-            bscan_shape = [x_bscan_rs.shape[0]]
-            bscan_shape.extend(list(x_bscan.shape[1:]))
-
-            x_angiography = x_angiography_rs.reshape(angio_shape)
-            x_structure = x_structure_rs.reshape(structure_shape)
-            x_bscan = x_bscan_rs.reshape(bscan_shape)
-
-            if not (np.allclose(y_rs, y_rs_alt) and np.allclose(y_rs, y_rs_alt_alt)):
-                raise Exception("Issues with SMOTE")
-
-            y = y_rs
-
-        elif cfg.oversample_method == 'random':
-            raise NotImplementedError
-
     # clearing the variables for memory purposes
     x_healthy = []
     y_healthy = []
@@ -109,6 +77,51 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
                 Xs, ys = _split_data_unbalanced(x_angiography, x_structure, x_bscan, y, cfg)
         else:
             Xs, ys = _split_data_unbalanced(x_angiography, x_structure, x_bscan, y, cfg)
+
+        if cfg.oversample:
+            if cfg.oversample_method == 'smote':
+
+                x_train = Xs[0]
+                x_angiography_train = x_train[0]
+                x_structure_train = x_train[1]
+                x_bscan_train = x_train[2]
+
+                y_train = np.argmax(ys[0], axis=1)
+
+                x_angiography_train_rs = x_angiography_train.reshape(x_angiography_train.shape[0], -1)
+                x_structure_train_rs = x_structure_train.reshape(x_structure_train.shape[0], -1)
+                x_bscan_train_rs = x_bscan_train.reshape(x_bscan_train.shape[0], -1)
+
+                sm = SMOTE()
+                x_angiography_train_rs, y_train_rs = sm.fit_resample(x_angiography_train_rs, y_train)
+                x_structure_train_rs, y_train_rs_alt = sm.fit_resample(x_structure_train_rs, y_train)
+                x_bscan_train_rs, y_train_rs_alt_alt = sm.fit_resample(x_bscan_train_rs, y_train)
+
+                angio_shape = [x_angiography_train_rs.shape[0]]
+                angio_shape.extend(list(x_angiography_train.shape[1:]))
+
+                structure_shape = [x_structure_train_rs.shape[0]]
+                structure_shape.extend(list(x_structure_train.shape[1:]))
+
+                bscan_shape = [x_bscan_train_rs.shape[0]]
+                bscan_shape.extend(list(x_bscan_train.shape[1:]))
+
+                x_angiography = x_angiography_train_rs.reshape(angio_shape)
+                x_structure = x_structure_train_rs.reshape(structure_shape)
+                x_bscan = x_bscan_train_rs.reshape(bscan_shape)
+
+                if not (np.allclose(y_train_rs, y_train_rs_alt) and np.allclose(y_train_rs, y_train_rs_alt_alt)):
+                    raise Exception("Issues with SMOTE")
+
+                x_train = [x_angiography, x_structure, x_bscan]
+                y_train = to_categorical(y_train_rs, num_classes=cfg.num_classes)
+
+                Xs = [x_train, Xs[1], Xs[2]]
+                ys = [y_train, ys[1], ys[2]]
+
+            elif cfg.oversample_method == 'random':
+                raise NotImplementedError
+
     else:
         if cfg.use_random_seed:
             with temp_seed(cfg.random_seed):
