@@ -2,6 +2,7 @@ from sklearn.metrics import confusion_matrix
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import rcParams
 
 
 def plot_training_loss(h, cfg, save=True):
@@ -45,16 +46,37 @@ def plot_norm_conf_matrix(y_true, y_pred, cfg, save=True):
     # normalize the matrix first
     conf_matrix_norm = conf_matrix.astype('float') / conf_matrix.sum(axis=1)[:, np.newaxis]
 
+    params = {
+        'font.size': 15,
+        'axes.titlesize': 16,
+        'axes.labelsize': 14,
+        'xtick.labelsize': 13,
+        'ytick.labelsize': 13,
+        'text.usetex': False,
+    }
+    rcParams.update(params)
+
     cmap = plt.get_cmap('Blues')
-    fig = plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 6))
     plt.imshow(conf_matrix_norm, interpolation='nearest', cmap=cmap)
-    plt.title('Normalized Confusion Matrix')
-    plt.colorbar()
+
+    if cfg.str_model == 'arch_009':
+        str_title = 'Normalized Confusion Matrix: {}'.format('Angiography')
+    elif cfg.str_model == 'arch_010':
+        str_title = 'Normalized Confusion Matrix: {}'.format('OCTA')
+    elif cfg.str_model == 'arch_012' or cfg.str_model == 'arch_013':
+        str_title = 'Normalized Confusion Matrix: {}'.format('B-scan')
+    elif cfg.str_model == 'arch_022':
+        str_title = 'Normalized Confusion Matrix: {}'.format('OCTA+B-scan')
+    else:
+        str_title = 'Normalized Confusion Matrix'
+
+    plt.title(str_title)
 
     thresh = np.max(conf_matrix_norm) / 1.5
     for i, j in itertools.product(range(conf_matrix_norm.shape[0]),
                                   range(conf_matrix_norm.shape[1])):
-        plt.text(j, i, "{:0.4f}".format(conf_matrix_norm[i, j]),
+        plt.text(j, i, "{:0.3f}".format(conf_matrix_norm[i, j]),
                  horizontalalignment="center",
                  color="white" if conf_matrix_norm[i, j] > thresh else "black")
 
@@ -80,11 +102,32 @@ def plot_norm_conf_matrix(y_true, y_pred, cfg, save=True):
 def plot_raw_conf_matrix(y_true, y_pred, cfg, save=True):
     conf_matrix = confusion_matrix(y_true, y_pred)
 
+    params = {
+        'font.size': 15,
+        'axes.titlesize': 16,
+        'axes.labelsize': 14,
+        'xtick.labelsize': 13,
+        'ytick.labelsize': 13,
+        'text.usetex': False,
+    }
+    rcParams.update(params)
+
     cmap = plt.get_cmap('Blues')
-    fig = plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 6))
     plt.imshow(conf_matrix, interpolation='nearest', cmap=cmap)
-    plt.title('Raw Confusion Matrix')
-    plt.colorbar()
+
+    if cfg.str_model == 'arch_009':
+        str_title = 'Raw Confusion Matrix: {}'.format('Angiography')
+    elif cfg.str_model == 'arch_010':
+        str_title = 'Raw Confusion Matrix: {}'.format('OCTA')
+    elif cfg.str_model == 'arch_012' or cfg.str_model == 'arch_013':
+        str_title = 'Raw Confusion Matrix: {}'.format('B-scan')
+    elif cfg.str_model == 'arch_022':
+        str_title = 'Raw Confusion Matrix: {}'.format('OCTA+B-scan')
+    else:
+        str_title = 'Raw Confusion Matrix'
+
+    plt.title(str_title)
 
     thresh = np.max(conf_matrix) / 1.5
     for i, j in itertools.product(range(conf_matrix.shape[0]),
