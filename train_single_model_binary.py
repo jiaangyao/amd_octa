@@ -49,7 +49,7 @@ cfg.overwrite = True
 cfg.balanced = False
 cfg.oversample = False
 cfg.oversample_method = 'smote'
-cfg.random_seed = 86
+cfg.random_seed = 68
 cfg.use_random_seed = True
 cfg.binary_class = True
 
@@ -83,17 +83,21 @@ h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbo
               validation_data=(Xs[1], ys[1]), shuffle=False, validation_batch_size=Xs[1][0].shape[0])
 cfg.history = h.history
 
-plot_training_loss(h)
-plot_training_acc(h)
+# save trained models
+save_model(model, cfg, overwrite=True, save_format='tf')
+
+# plotting training history
+plot_training_loss(h, cfg, save=True)
+plot_training_acc(h, cfg, save=True)
 
 # Now perform prediction
 train_set_score = model.evaluate(Xs[0], ys[0], callbacks=callbacks, verbose=0)
 valid_set_score = model.evaluate(Xs[1], ys[1], callbacks=callbacks, verbose=0)
 test_set_score = model.evaluate(Xs[2], ys[2], callbacks=callbacks, verbose=0)
 
-print("\nAverage train set accuracy: {}".format(train_set_score[1]))
-print("Average valid set accuracy: {}".format(valid_set_score[1]))
-print("Average test set accuracy: {}".format(test_set_score[1]))
+print("\nTrain set accuracy: {}".format(train_set_score[1]))
+print("Valid set accuracy: {}".format(valid_set_score[1]))
+print("Test set accuracy: {}".format(test_set_score[1]))
 
 y_true = ys[-1]
 y_pred = model.predict(Xs[2])
@@ -103,10 +107,8 @@ y_pred[y_pred < 0.5] = 0
 cfg.y_test_true = y_true
 cfg.y_test_pred = y_pred
 
-plot_raw_conf_matrix(y_true, y_pred, cfg)
-plot_norm_conf_matrix(y_true, y_pred, cfg)
-
-# save trained models
-save_model(model, cfg, overwrite=True, save_format='tf')
+# plot the confusion matrices
+plot_raw_conf_matrix(y_true, y_pred, cfg, save=True)
+plot_norm_conf_matrix(y_true, y_pred, cfg, save=True)
 
 print('nothing')

@@ -49,10 +49,10 @@ cfg.lr = 5e-5
 cfg.lam = 1e-5
 cfg.overwrite = True
 
-cfg.balanced = True
-cfg.oversample = False
+cfg.balanced = False
+cfg.oversample = True
 cfg.oversample_method = 'smote'
-cfg.random_seed = 86
+cfg.random_seed = 68
 cfg.use_random_seed = True
 cfg.binary_class = False
 
@@ -79,24 +79,30 @@ print("x_test B scan shape: {}".format(Xs[2][2].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-model = get_model('arch_009', cfg)
+model = get_model('arch_022', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
               validation_data=(Xs[1], ys[1]), shuffle=False, validation_batch_size=Xs[1][0].shape[0])
 cfg.history = h.history
 
-plot_training_loss(h)
-plot_training_acc(h)
+# save trained models
+save_model(model, cfg, overwrite=True, save_format='tf')
+
+# plotting training history
+plot_training_loss(h, cfg, save=True)
+plot_training_acc(h, cfg, save=True)
 
 # Now perform prediction
 train_set_score = model.evaluate(Xs[0], ys[0], callbacks=callbacks, verbose=0)
 valid_set_score = model.evaluate(Xs[1], ys[1], callbacks=callbacks, verbose=0)
 test_set_score = model.evaluate(Xs[2], ys[2], callbacks=callbacks, verbose=0)
 
-print("Average train set accuracy: {}".format(train_set_score[1]))
-print("Average valid set accuracy: {}".format(valid_set_score[1]))
-print("Average test set accuracy: {}".format(test_set_score[1]))
+print("\nTrain set accuracy: {}".format(train_set_score[1]))
+print("Valid set accuracy: {}".format(valid_set_score[1]))
+print("Test set accuracy: {}".format(test_set_score[1]))
+
+cfg.vec_acc = [train_set_score[1], valid_set_score[1], test_set_score[1]]
 
 y_true = np.argmax(ys[-1], axis=1)
 y_pred = np.argmax(model.predict(Xs[2]), axis=1)
@@ -104,10 +110,10 @@ y_pred = np.argmax(model.predict(Xs[2]), axis=1)
 cfg.y_test_true = y_true
 cfg.y_test_pred = y_pred
 
-plot_raw_conf_matrix(y_true, y_pred, cfg)
-plot_norm_conf_matrix(y_true, y_pred, cfg)
+# plot the confusion matrices
+plot_raw_conf_matrix(y_true, y_pred, cfg, save=True)
+plot_norm_conf_matrix(y_true, y_pred, cfg, save=True)
 
-# save trained models
-save_model(model, cfg, overwrite=True, save_format='tf')
-
+# save the cfg, which contains configurations and results
+save_cfg(cfg, overwrite=True)
 print('nothing')
