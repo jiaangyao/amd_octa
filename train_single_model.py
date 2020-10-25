@@ -21,7 +21,7 @@ cfg.label_dry_amd = 1
 cfg.str_cnv = 'CNV'
 cfg.label_cnv = 2
 cfg.num_classes = 3
-cfg.vec_str_labels = ['Normal', 'Dry Amd', 'CNV']
+cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
@@ -49,8 +49,8 @@ cfg.lr = 5e-5
 cfg.lam = 1e-5
 cfg.overwrite = True
 
-cfg.balanced = False
-cfg.oversample = True
+cfg.balanced = True
+cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.random_seed = 68
 cfg.use_random_seed = True
@@ -79,7 +79,7 @@ print("x_test B scan shape: {}".format(Xs[2][2].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-model = get_model('arch_022', cfg)
+model = get_model('arch_009', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,

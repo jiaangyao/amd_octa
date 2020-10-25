@@ -18,7 +18,7 @@ cfg.label_dry_amd = 0
 cfg.str_cnv = 'CNV'
 cfg.label_cnv = 1
 cfg.num_classes = 2
-cfg.vec_str_labels = ['Dry Amd', 'CNV']
+cfg.vec_str_labels = ['NNV AMD', 'NV AMD']
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
