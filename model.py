@@ -719,60 +719,53 @@ def get_model(str_model, cfg):
     if str_model == 'arch_009':
         """
         Test 1: 5 repeated runs
-        cfg.lr = 5e-5
-        cfg.lam = 1e-5
-        cfg.downscale_size = [256, 256]
-
-        balanced sample
-        no SMOTE
-
-        number of parameters: 121k
-
-        worse with dry AMD but okay for the others...
-
-        Train, valid, test acc: [86.8+5.4, 78.1+7.7, 68.1+7.8] (avg + standard error)
+            worse with dry AMD but okay for the others...
+            
+            cfg.lr = 5e-5
+            cfg.lam = 1e-5
+            cfg.downscale_size = [256, 256]
+    
+            balanced sample
+            no SMOTE
+    
+            number of parameters: 121k
+    
+            Train, valid, test acc: [86.8+5.4, 78.1+7.7, 68.1+7.8] (avg + standard error)
         
         Test 2: 10 repeated runs
-        cfg.lr = 5e-5
-        cfg.lam = 1e-5
-        cfg.downscale_size = [256, 256]
-
-        balanced sample
-        no SMOTE
-
-        number of parameters: 121k
-
-        worse with dry AMD but okay for the others...
-
-        Train, valid, test acc: [87.6+5.6, 75.0+7.3, 69.6+5.7] (avg + standard error)
+            balanced sample
+            no SMOTE
+            number of parameters: 121k
+    
+            Train, valid, test acc: [87.6+5.6, 75.0+7.3, 69.6+5.7] (avg + standard error)
         
         Test 3: 10 repeated runs
-        cfg.lr = 5e-5
-        cfg.lam = 1e-5
-        cfg.downscale_size = [256, 256]
-
-        balanced sample
-        no SMOTE
-
-        number of parameters: 121k
-
-        with additional data
-
-        Train, valid, test acc: [84.5+5.3, 64.5+9.0, 63.6+9.1] (avg + standard error)
+            balanced sample
+            no SMOTE
+            number of parameters: 121k
+    
+            with additional data
+    
+            Train, valid, test acc: [84.5+5.3, 64.5+9.0, 63.6+9.1] (avg + standard error)
         
         Test 4: 10 repeated runs
-        cfg.lr = 5e-5
-        cfg.lam = 1e-5
-        cfg.downscale_size = [256, 256]
+            balanced sample
+            with SMOTE
+            number of parameters: 121k
+    
+            with additional data
+    
+            Train, valid, test acc: [91.1+4.0, 79.6+2.5, 77.5+5.5] (avg + standard error)
+        
+        Test 5: 10 repeated runs
+            balanced sample
+            with SMOTE
+            number of parameters: 121k
 
-        balanced sample
-        with SMOTE
-
-        number of parameters: 121k
-
-        with additional data
-
-        Train, valid, test acc: [91.1+4.0, 79.6+2.5, 77.5+5.5] (avg + standard error)
+            with latest data: 10/24
+            
+            Train, valid, test acc: [43.0+10.4, 32.9+10.0, 30.9+8.6] (avg + standard error)
+        
 
         """
 
