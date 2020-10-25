@@ -7,6 +7,7 @@ from config.load_config import get_config
 from preprocess import preprocess
 from model import get_model, get_callbacks
 from plotting import plot_raw_conf_matrix, plot_norm_conf_matrix
+import time
 
 
 # Configuring the files here for now
@@ -21,7 +22,7 @@ cfg.label_dry_amd = 1
 cfg.str_cnv = 'CNV'
 cfg.label_cnv = 2
 cfg.num_classes = 3
-cfg.vec_str_labels = ['Normal', 'Dry Amd', 'CNV']
+cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
@@ -56,7 +57,7 @@ cfg.decimate = False
 cfg.random_seed = 68
 cfg.use_random_seed = False
 cfg.binary_class = False
-cfg.n_repeats = 5
+cfg.n_repeats = 10
 
 vec_idx_healthy = [1, 250]
 vec_idx_dry_amd = [1, 250]
@@ -69,6 +70,9 @@ vec_test_acc = []
 vec_y_true = []
 vec_y_pred = []
 vec_model = []
+
+
+np.random.seed(cfg.random_seed)
 
 
 for i in range(cfg.n_repeats):
@@ -92,7 +96,7 @@ for i in range(cfg.n_repeats):
     print("x_test B scan shape: {}".format(Xs[2][2].shape))
     print("y_test onehot shape: {}".format(ys[2].shape))
 
-    model = get_model('arch_022', cfg)
+    model = get_model('arch_010', cfg)
     callbacks = get_callbacks(cfg)
 
     h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
@@ -123,7 +127,11 @@ print("Average test set accuracy: {} + ".format(np.mean(vec_test_acc)), np.std(v
 y_true = np.concatenate(vec_y_true, axis=0)
 y_pred = np.concatenate(vec_y_pred, axis=0)
 
-plot_raw_conf_matrix(y_true, y_pred, cfg)
-plot_norm_conf_matrix(y_true, y_pred, cfg)
+f_model = "{}_{}".format(cfg.str_model, time.strftime("%Y%m%d_%H%M%S"))
+cfg.p_figure = Path('/home/jyao/Downloads/conf_matrix_repeated_seed_fixed/') / cfg.str_model / f_model
+cfg.p_figure.mkdir(exist_ok=True, parents=True)
+
+plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=cfg.str_model)
+plot_norm_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=cfg.str_model)
 
 print('nothing')
