@@ -18,9 +18,17 @@ def save_model(model, cfg, overwrite=True, save_format='tf'):
     p_model = cfg.d_model / cfg.str_model / f_model
     p_model.mkdir(parents=True, exist_ok=True)
 
+    cfg.p_figure = p_model
+    cfg.p_cfg = p_model
+
     model.save_weights(filepath=str(p_model / f_model), overwrite=overwrite, save_format=save_format)
-    with open(str(p_model / 'cfg_file'), 'wb') as handle:
-        pickle.dump(cfg, handle)
+
+
+def save_cfg(cfg, overwrite=True):
+    pf_cfg = cfg.p_cfg / 'cfg_file'
+    if not (pf_cfg.exists() and not overwrite):
+        with open(str(cfg.p_cfg / 'cfg_file'), 'wb') as handle:
+            pickle.dump(cfg, handle)
 
 
 def load_model(model, cfg, name, **kwargs):
@@ -35,6 +43,7 @@ def load_model(model, cfg, name, **kwargs):
 
     f_model = "{}_{}".format(cfg.str_model, name)
     p_model = cfg.d_model / cfg.str_model / f_model
+    cfg.p_figure = p_model
     if not p_model.exists():
         raise Exception('No saved models are available: check path setting')
 
@@ -51,6 +60,7 @@ def load_config(cfg, name):
 
     f_model = "{}_{}".format(cfg.str_model, name)
     p_model = cfg.d_model / cfg.str_model / f_model
+    cfg.p_figure = p_model
     if not p_model.exists():
         raise Exception('No saved configs are available: check path setting')
 

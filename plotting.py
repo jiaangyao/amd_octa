@@ -4,27 +4,41 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_training_loss(h):
+def plot_training_loss(h, cfg, save=True):
     plt.figure()
     plt.plot(np.arange(1, len(h.history['loss']) + 1, 1), h.history['loss'])
     plt.plot(np.arange(1, len(h.history['val_loss']) + 1, 1), h.history['val_loss'])
     plt.title("Loss history in training")
     plt.xlabel('Training Iterations')
     plt.ylabel('Loss')
-    plt.show()
+
+    fig = plt.gcf()
+    if save:
+        f_figure = 'training_loss.eps'
+        fig.savefig(str(cfg.p_figure / f_figure), format='eps')
+    else:
+        plt.show()
+    plt.close(fig)
 
 
-def plot_training_acc(h):
+def plot_training_acc(h, cfg, save=True):
     plt.figure()
     plt.plot(np.arange(1, len(h.history['accuracy']) + 1, 1), h.history['accuracy'])
     plt.plot(np.arange(1, len(h.history['val_accuracy']) + 1, 1), h.history['val_accuracy'])
     plt.title("Accuracy history in training")
     plt.xlabel('Training Iterations')
     plt.ylabel('Accuracy')
-    plt.show()
+
+    fig = plt.gcf()
+    if save:
+        f_figure = 'training_acc.eps'
+        fig.savefig(str(cfg.p_figure / f_figure), format='eps')
+    else:
+        plt.show()
+    plt.close(fig)
 
 
-def plot_norm_conf_matrix(y_true, y_pred, cfg):
+def plot_norm_conf_matrix(y_true, y_pred, cfg, save=True):
     conf_matrix = confusion_matrix(y_true, y_pred)
 
     # plot the confusion matrix
@@ -54,10 +68,16 @@ def plot_norm_conf_matrix(y_true, y_pred, cfg):
            ylabel="True label",
            xlabel="Predicted label")
 
-    plt.show()
+    fig = plt.gcf()
+    if save:
+        f_figure = 'norm_conf_matrix.eps'
+        fig.savefig(str(cfg.p_figure / f_figure), format='eps')
+    else:
+        plt.show()
+    plt.close(fig)
 
 
-def plot_raw_conf_matrix(y_true, y_pred, cfg):
+def plot_raw_conf_matrix(y_true, y_pred, cfg, save=True):
     conf_matrix = confusion_matrix(y_true, y_pred)
 
     cmap = plt.get_cmap('Blues')
@@ -83,4 +103,10 @@ def plot_raw_conf_matrix(y_true, y_pred, cfg):
            ylabel="True label",
            xlabel="Predicted label")
 
-    plt.show()
+    fig = plt.gcf()
+    if save:
+        f_figure = 'raw_conf_matrix.eps'
+        fig.savefig(str(cfg.p_figure / f_figure), format='eps')
+    else:
+        plt.show()
+    plt.close(fig)
