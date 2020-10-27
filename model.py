@@ -765,6 +765,36 @@ def get_model(str_model, cfg):
             with latest data: 10/24
             
             Train, valid, test acc: [43.0+10.4, 32.9+10.0, 30.9+8.6] (avg + standard error)
+            
+        Test 6: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 121k
+
+            with latest data: 10/24
+            
+            Train, valid, test acc: [81.5+4.7, 63.3+11.6, 64.9+6.2] (avg + standard error)
+            
+        Test 7: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 121k
+
+            with latest data: 10/24
+            corrected figure
+            
+            Train, valid, test acc: [80.0+8.3, 65.1+12.3, 60.6+10.1] (avg + standard error)
+            
+        Test 8: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 121k
+
+            with latest data: 10/24
+            corrected figure
+            Fixed random seed: 68
+            
+            Train, valid, test acc: [82.8+5.1, 68.3+9.0, 68.4+4.8] (avg + standard error)
         
 
         """
@@ -842,6 +872,22 @@ def get_model(str_model, cfg):
 
         number of parameters: 241k
         Train, valid, test acc: [87.6+4.5, 70.6+8.7, 73.8+6.5] (avg + standard error)
+        
+        Test 3: 10 repeated runs
+            balanced sample
+            no SMOTE
+    
+            number of parameters: 241k
+            Train, valid, test acc: [88.4+4.1, 74.3+6.7, 70.5+6.3] (avg + standard error)
+            
+        Test 4:
+            balanced sample
+            no SMOTE
+    
+            number of parameters: 241k
+            
+            Fixed random seed: 68
+            Train, valid, test acc: [90.5+3.2, 77.4+2.5, 77.8+3.2] (avg + standard error)
 
         """
 
@@ -1622,6 +1668,25 @@ def get_model(str_model, cfg):
 
         number of parameters: 339k
         Train, valid, test acc: [90.4+3.2, 73.5+5.1, 68.5+7.7] (avg + standard error)
+        
+        Test 2: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 339k
+            
+            new dataset: 10/24
+        
+            Train, valid, test acc: [87.9+4.5, 74.3+5.5, 70.4+6.1] (avg + standard error)
+            
+        Test 3: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 339k
+            
+            new dataset: 10/24
+            Fixed random seed: 68
+        
+            Train, valid, test acc: [89.6+6.0, 78.1+6.4, 75.2+5.8] (avg + standard error)
 
         """
 
@@ -1723,6 +1788,84 @@ def get_model(str_model, cfg):
         model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs], outputs=y)
         model.summary()
 
+        model.compile(optimizer=RMSprop(lr=cfg.lr), loss='categorical_crossentropy', metrics=['accuracy'])
+
+        return model
+
+    elif str_model == 'arch_023':
+        """
+        architecture from Kavi
+
+        Test 1: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 76k
+
+            new dataset: 10/24
+
+            Train, valid, test acc: [55.0+17.8, 45.1+12.9, 40.0+9.5] (avg + standard error)
+            
+        Test 2: 10 repeated runs
+            balanced sample
+            with SMOTE
+            number of parameters: 76k
+
+            new dataset: 10/24
+
+            Train, valid, test acc: [51.0+8.3, 38.6+8.3, 40.7+6.4] (avg + standard error)
+            
+        Test 3: 10 repeated runs
+            balanced sample
+            with SMOTE
+            number of parameters: 76k
+
+            new dataset: 10/24
+            Fixed random seed: 68
+
+            Train, valid, test acc: [50.9+18.0, 46.5+8.4, 42.8+10.3] (avg + standard error)
+
+        """
+
+        angiography_inputs = Input(shape=cfg.sample_size[0])
+        structure_inputs = Input(shape=cfg.sample_size[0])
+        bscan_inputs = Input(shape=cfg.sample_size[1])
+
+        x = Conv2D(5, kernel_size=(21, 21), kernel_initializer='he_uniform')(bscan_inputs)
+        x = ReLU()(x)
+        x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv2D(8, kernel_size=(15, 15), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv2D(10, kernel_size=(11, 11), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv2D(15, kernel_size=(7, 7), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPool2D(pool_size=(2, 2))(x)
+        x = Dropout(0.2)(x)
+        x = Flatten()(x)
+        # x = Concatenate()([x_angio, x_struct, x_bscan])
+
+        x = Flatten()(x)
+        x = Dropout(0.05)(x)
+
+        x = Dense(64, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+        x = Dropout(0.3)(x)
+
+        x = Dense(16, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+
+        y = Dense(cfg.num_classes, activation='softmax')(x)
+
+        model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs], outputs=y)
+        model.summary()
         model.compile(optimizer=RMSprop(lr=cfg.lr), loss='categorical_crossentropy', metrics=['accuracy'])
 
         return model
