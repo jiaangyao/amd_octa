@@ -20,22 +20,25 @@ _, gpus = num_of_gpus()
 print('{} GPUs'.format(gpus))
 
 f_fig = Path('/home/jyao/Downloads/fig/')
+d_model = Path('/home/jyao/Local/amd_octa/trained_models/')
 
 cfg = get_config(filename=Path(os.getcwd()) / 'config' / 'default_config.yml')
-cfg.d_model = f_fig
+cfg.d_model = d_model
 cfg.lr = 5e-5
 cfg.lam = 1e-5
 cfg.num_classes = 3
 cfg.sample_size = [[256, 256, 5, 1], [256, 256, 1]]
 
-angio_model = get_model('arch_009', cfg)
+struct_model = get_model('arch_022', cfg)
 
-bscan_model = tf.keras.models.load_model(str(f_fig / 'bscanNewDataSmall_101920.h5'))
-combined_model = tf.keras.models.load_model(str(f_fig / 'combinedBest_102220.h5'))
-angio_model.load_weights(str(f_fig / 'arch_009_20201022_145518'))
+# bscan_model = tf.keras.models.load_model(str(f_fig / 'bscanNewDataSmall_101920.h5'))
+# combined_model = tf.keras.models.load_model(str(f_fig / 'combinedBest_102220.h5'))
+load_model(struct_model, cfg, '20201024_192227')
+#
+# struct_model.load_weights(str(f_fig / 'arch_009_20201022_145518'))
 
-struct_model = get_model('arch_010', cfg)
-struct_model.load_weights(str(f_fig / 'arch_010_20201022_144636'))
+# struct_model = get_model('arch_010', cfg)
+# struct_model.load_weights(str(f_fig / 'arch_010_20201022_144636'))
 
 
 # Image titles
@@ -111,11 +114,11 @@ def model_modifier(m):
     return m
 
 
-gradcam_angio = Gradcam(angio_model, model_modifier=model_modifier, clone=False)
-
-# Generate heatmap with GradCAM
-cam_angio = gradcam_angio(loss, x, penultimate_layer=13, expand_cam=True)
-cam_angio = normalize(cam_angio[0])
+# gradcam_angio = Gradcam(angio_model, model_modifier=model_modifier, clone=False)
+#
+# # Generate heatmap with GradCAM
+# cam_angio = gradcam_angio(loss, x, penultimate_layer=13, expand_cam=True)
+# cam_angio = normalize(cam_angio[0])
 
 
 # image_titles = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
