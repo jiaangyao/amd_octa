@@ -70,6 +70,9 @@ def plot_norm_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None):
     cmap = plt.get_cmap('Blues')
     plt.figure(figsize=(8, 6))
     plt.imshow(conf_matrix_norm, interpolation='nearest', cmap=cmap)
+    if cfg.str_model == 'arch_012' or cfg.str_model == 'arch_013' or cfg.str_model == 'arch_023':
+        plt.clim(0, 0.75)
+
     plt.colorbar()
 
     if cfg.str_model == 'arch_009':
@@ -144,6 +147,8 @@ def plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None):
     cmap = plt.get_cmap('Blues')
     plt.figure(figsize=(8, 6))
     plt.imshow(conf_matrix_norm, interpolation='nearest', cmap=cmap)
+    if cfg.str_model == 'arch_012' or cfg.str_model == 'arch_013' or cfg.str_model == 'arch_023':
+        plt.clim(0, 0.75)
     plt.colorbar()
 
     if cfg.str_model == 'arch_009':
