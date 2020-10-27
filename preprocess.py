@@ -25,12 +25,14 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
                                                               cfg.str_angiography, cfg.str_structure, cfg.str_bscan, 
                                                               cfg.vec_str_layer, cfg.str_bscan_layer, 
                                                               cfg.dict_layer_order)
+    print('Total number of dry AMD patients: {}\n'.format(x_dry_amd[0].shape[0]))
 
     print('\nLoading data from CNV patients')
     x_cnv, y_cnv, vec_str_cnv_patient = load_data(vec_idx_cnv, cfg.str_cnv, cfg.label_cnv,
                                                   cfg.d_data, cfg.downscale_size, cfg.num_octa,
                                                   cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
                                                   cfg.vec_str_layer, cfg.str_bscan_layer, cfg.dict_layer_order)
+    print('Total number of CNV patients: {}\n'.format(x_cnv[0].shape[0]))
 
     cfg.n_dry_amd = x_dry_amd[0].shape[0]
     cfg.n_cnv = x_cnv[0].shape[0]
@@ -43,6 +45,7 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
                                                                   cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
                                                                   cfg.vec_str_layer, cfg.str_bscan_layer,
                                                                   cfg.dict_layer_order)
+        print('Total number of healthy patients: {}\n'.format(x_healthy[0].shape[0]))
         cfg.n_healthy = x_healthy[0].shape[0]
 
         # unpack once more
