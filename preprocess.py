@@ -136,29 +136,30 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
 
 
 def _split_data_unbalanced(x_angiography, x_structure, x_bscan, y, cfg):
+
     while True:
         idx_permutation = np.random.permutation(x_angiography.shape[0])
-        x_angiography = x_angiography[idx_permutation, :, :, :, :]
-        x_structure = x_structure[idx_permutation, :, :, :, :]
-        x_bscan = x_bscan[idx_permutation, :, :, :]
-        y = y[idx_permutation]
+        x_angiography_curr = x_angiography[idx_permutation, :, :, :, :]
+        x_structure_curr = x_structure[idx_permutation, :, :, :, :]
+        x_bscan_curr = x_bscan[idx_permutation, :, :, :]
+        y_curr = y[idx_permutation]
 
         # split into train, validation and test
         n_train = int(np.ceil(len(idx_permutation) * cfg.per_train))
         n_valid = int(np.floor(len(idx_permutation) * cfg.per_valid))
 
-        x_angiography_train, x_angiography_valid, x_angiography_test = _split_x_set(x_angiography, n_train,
+        x_angiography_train, x_angiography_valid, x_angiography_test = _split_x_set(x_angiography_curr, n_train,
                                                                                     n_valid)
-        x_structure_train, x_structure_valid, x_structure_test = _split_x_set(x_structure, n_train, n_valid)
-        x_bscan_train, x_bscan_valid, x_bscan_test = _split_x_set(x_bscan, n_train, n_valid)
+        x_structure_train, x_structure_valid, x_structure_test = _split_x_set(x_structure_curr, n_train, n_valid)
+        x_bscan_train, x_bscan_valid, x_bscan_test = _split_x_set(x_bscan_curr, n_train, n_valid)
 
         x_train = [x_angiography_train, x_structure_train, x_bscan_train]
         x_valid = [x_angiography_valid, x_structure_valid, x_bscan_valid]
         x_test = [x_angiography_test, x_structure_test, x_bscan_test]
 
-        y_train = y[: n_train]
-        y_valid = y[n_train: n_train + n_valid]
-        y_test = y[n_train + n_valid:]
+        y_train = y_curr[: n_train]
+        y_valid = y_curr[n_train: n_train + n_valid]
+        y_test = y_curr[n_train + n_valid:]
 
         if len(np.unique(y_train)) == cfg.num_classes and len(np.unique(y_valid)) == cfg.num_classes and \
                 len(np.unique(y_test)) == cfg.num_classes:
