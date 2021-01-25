@@ -13,12 +13,30 @@ cfg = get_config(filename=Path(os.getcwd()) / 'config' / 'default_config.yml')
 cfg.d_data = Path('/home/jyao/Local/amd_octa/')
 cfg.d_model = Path('/home/jyao/Local/amd_octa/trained_models/')
 
+cfg.str_healthy = 'Normal'
 cfg.str_dry_amd = 'Dry AMD'
-cfg.label_dry_amd = 0
 cfg.str_cnv = 'CNV'
-cfg.label_cnv = 1
+
+cfg.binary_class = True
+cfg.binary_mode = 1     # binary_mode = 0 (normal vs NNV) / 1 (normal vs NV) / 2 (NNV vs NV)
 cfg.num_classes = 2
-cfg.vec_str_labels = ['NNV AMD', 'NV AMD']
+if cfg.binary_mode == 0:
+    cfg.label_healthy = 0
+    cfg.label_dry_amd = 1
+    cfg.vec_str_labels = ['Normal', 'NNV AMD']
+
+elif cfg.binary_mode == 1:
+    cfg.label_healthy = 0
+    cfg.label_cnv = 1
+    cfg.vec_str_labels = ['Normal', 'NV AMD']
+
+elif cfg.binary_mode == 2:
+    cfg.label_dry_amd = 0
+    cfg.label_cnv = 1
+    cfg.vec_str_labels = ['NNV AMD', 'NV AMD']
+
+else:
+    raise Exception('Undefined binary mode')
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
@@ -51,7 +69,6 @@ cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.random_seed = 68
 cfg.use_random_seed = True
-cfg.binary_class = True
 
 vec_idx_healthy = [1, 250]
 vec_idx_dry_amd = [1, 250]
@@ -76,7 +93,7 @@ print("x_test B scan shape: {}".format(Xs[2][2].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-model = get_model_binary('arch_009_binary', cfg)
+model = get_model_binary('arch_010_binary', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,

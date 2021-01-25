@@ -19,33 +19,23 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
         if not cfg.num_classes == 2:
             raise Exception('Binary classification specified but three classes requested')
 
-    print('\nLoading data from dry AMD patients')
-    x_dry_amd, y_dry_amd, vec_str_dry_amd_patient = load_data(vec_idx_dry_amd, cfg.str_dry_amd, cfg.label_dry_amd, 
-                                                              cfg.d_data, cfg.downscale_size, cfg.num_octa, 
-                                                              cfg.str_angiography, cfg.str_structure, cfg.str_bscan, 
-                                                              cfg.vec_str_layer, cfg.str_bscan_layer, 
-                                                              cfg.dict_layer_order)
-    print('Total number of dry AMD patients: {}\n'.format(x_dry_amd[0].shape[0]))
-
-    print('\nLoading data from CNV patients')
-    x_cnv, y_cnv, vec_str_cnv_patient = load_data(vec_idx_cnv, cfg.str_cnv, cfg.label_cnv,
-                                                  cfg.d_data, cfg.downscale_size, cfg.num_octa,
-                                                  cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
-                                                  cfg.vec_str_layer, cfg.str_bscan_layer, cfg.dict_layer_order)
-    print('Total number of CNV patients: {}\n'.format(x_cnv[0].shape[0]))
-
-    cfg.n_dry_amd = x_dry_amd[0].shape[0]
-    cfg.n_cnv = x_cnv[0].shape[0]
-
     if not cfg.binary_class:
-
         print('\nLoading data from normal patients')
-        x_healthy, y_healthy, vec_str_healthy_patient = load_data(vec_idx_healthy, cfg.str_healthy, cfg.label_healthy,
-                                                                  cfg.d_data, cfg.downscale_size, cfg.num_octa,
-                                                                  cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
-                                                                  cfg.vec_str_layer, cfg.str_bscan_layer,
-                                                                  cfg.dict_layer_order)
+        x_healthy, y_healthy, vec_str_healthy_patient = _load_specific_label(vec_idx_healthy, cfg.str_healthy,
+                                                                             cfg.label_healthy, cfg)
         print('Total number of healthy patients: {}\n'.format(x_healthy[0].shape[0]))
+
+        print('\nLoading data from dry AMD patients')
+        x_dry_amd, y_dry_amd, vec_str_dry_amd_patient = _load_specific_label(vec_idx_dry_amd, cfg.str_dry_amd,
+                                                                             cfg.label_dry_amd, cfg)
+        print('Total number of dry AMD patients: {}\n'.format(x_dry_amd[0].shape[0]))
+
+        print('\nLoading data from CNV patients')
+        x_cnv, y_cnv, vec_str_cnv_patient = _load_specific_label(vec_idx_cnv, cfg.str_cnv, cfg.label_cnv, cfg)
+        print('Total number of CNV patients: {}\n'.format(x_cnv[0].shape[0]))
+
+        cfg.n_dry_amd = x_dry_amd[0].shape[0]
+        cfg.n_cnv = x_cnv[0].shape[0]
         cfg.n_healthy = x_healthy[0].shape[0]
 
         # unpack once more
@@ -57,12 +47,61 @@ def preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg):
         cfg.vec_str_patient = np.concatenate((vec_str_healthy_patient, vec_str_dry_amd_patient, vec_str_cnv_patient), axis=0)
 
     else:
-        x_angiography = np.concatenate((x_dry_amd[0], x_cnv[0]), axis=0)
-        x_structure = np.concatenate((x_dry_amd[1], x_cnv[1]), axis=0)
-        x_bscan = np.concatenate((x_dry_amd[2], x_cnv[2]), axis=0)
-        y = np.concatenate((y_dry_amd, y_cnv), axis=0)
+        # TODO: code below is ugly...
+        if cfg.binary_mode == 0:
+            print('\nLoading data from normal patients')
+            x_healthy, y_healthy, vec_str_healthy_patient = _load_specific_label(vec_idx_healthy, cfg.str_healthy,
+                                                                                 cfg.label_healthy, cfg)
+            print('Total number of healthy patients: {}\n'.format(x_healthy[0].shape[0]))
 
-        cfg.vec_str_patient = np.concatenate((vec_str_dry_amd_patient, vec_str_cnv_patient), axis=0)
+            print('\nLoading data from dry AMD patients')
+            x_dry_amd, y_dry_amd, vec_str_dry_amd_patient = _load_specific_label(vec_idx_dry_amd, cfg.str_dry_amd,
+                                                                                 cfg.label_dry_amd, cfg)
+            print('Total number of dry AMD patients: {}\n'.format(x_dry_amd[0].shape[0]))
+
+            x_angiography = np.concatenate((x_healthy[0], x_dry_amd[0]), axis=0)
+            x_structure = np.concatenate((x_healthy[1], x_dry_amd[1]), axis=0)
+            x_bscan = np.concatenate((x_healthy[2], x_dry_amd[2]), axis=0)
+            y = np.concatenate((y_healthy, y_dry_amd), axis=0)
+
+            cfg.vec_str_patient = np.concatenate((vec_str_healthy_patient, vec_str_dry_amd_patient), axis=0)
+
+        elif cfg.binary_mode == 1:
+            print('\nLoading data from normal patients')
+            x_healthy, y_healthy, vec_str_healthy_patient = _load_specific_label(vec_idx_healthy, cfg.str_healthy,
+                                                                                 cfg.label_healthy, cfg)
+            print('Total number of healthy patients: {}\n'.format(x_healthy[0].shape[0]))
+
+            print('\nLoading data from CNV patients')
+            x_cnv, y_cnv, vec_str_cnv_patient = _load_specific_label(vec_idx_cnv, cfg.str_cnv, cfg.label_cnv, cfg)
+            print('Total number of CNV patients: {}\n'.format(x_cnv[0].shape[0]))
+
+            x_angiography = np.concatenate((x_healthy[0], x_cnv[0]), axis=0)
+            x_structure = np.concatenate((x_healthy[1], x_cnv[1]), axis=0)
+            x_bscan = np.concatenate((x_healthy[2], x_cnv[2]), axis=0)
+            y = np.concatenate((y_healthy, y_cnv), axis=0)
+
+            cfg.vec_str_patient = np.concatenate((vec_str_healthy_patient, vec_str_cnv_patient), axis=0)
+
+        elif cfg.binary_mode == 2:
+            print('\nLoading data from dry AMD patients')
+            x_dry_amd, y_dry_amd, vec_str_dry_amd_patient = _load_specific_label(vec_idx_dry_amd, cfg.str_dry_amd,
+                                                                                 cfg.label_dry_amd, cfg)
+            print('Total number of dry AMD patients: {}\n'.format(x_dry_amd[0].shape[0]))
+
+            print('\nLoading data from CNV patients')
+            x_cnv, y_cnv, vec_str_cnv_patient = _load_specific_label(vec_idx_cnv, cfg.str_cnv, cfg.label_cnv, cfg)
+            print('Total number of CNV patients: {}\n'.format(x_cnv[0].shape[0]))
+
+            x_angiography = np.concatenate((x_dry_amd[0], x_cnv[0]), axis=0)
+            x_structure = np.concatenate((x_dry_amd[1], x_cnv[1]), axis=0)
+            x_bscan = np.concatenate((x_dry_amd[2], x_cnv[2]), axis=0)
+            y = np.concatenate((y_dry_amd, y_cnv), axis=0)
+
+            cfg.vec_str_patient = np.concatenate((vec_str_dry_amd_patient, vec_str_cnv_patient), axis=0)
+
+        else:
+            raise Exception('Undefined mode for binary classification')
 
     # clearing the variables for memory purposes
     x_healthy = []
@@ -337,6 +376,23 @@ def _split_x_set(x, n_train, n_valid):
 
     return x_train, x_valid, x_test
 
+
+def _load_specific_label(vec_idx_class, str_class, label_class, cfg):
+    """
+    Functional wrapper for loading a specific label using function below
+
+    :param vec_idx_class:
+    :param str_class:
+    :param label_class:
+    :param cfg:
+    :return:
+    """
+    x_class, y_class, vec_str_class = load_data(vec_idx_class, str_class, label_class,
+                                                  cfg.d_data, cfg.downscale_size, cfg.num_octa,
+                                                  cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
+                                                  cfg.vec_str_layer, cfg.str_bscan_layer, cfg.dict_layer_order)
+
+    return x_class, y_class, vec_str_class
 
 def load_data(vec_idx, str_class, label_class, d_data, downscale_size, num_octa, str_angiography, str_structure,
               str_bscan, vec_str_layer, str_bscan_layer, dict_layer_order):
