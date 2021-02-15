@@ -395,6 +395,8 @@ def data_loading(vec_idx_patient, cfg):
         X, y, vec_str_patients = load_all_data_csv(vec_idx_patient, vec_str_patient_id, vec_OD_feature,
                                                    vec_OS_feature, cfg)
 
+        cfg.vec_str_patients = vec_str_patients
+
     else:
         raise Exception('Undefined load mode')
 

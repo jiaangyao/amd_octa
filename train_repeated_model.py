@@ -1,5 +1,5 @@
 import os
-from pathlib import Path
+import pathlib
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -11,9 +11,27 @@ import time
 
 
 # Configuring the files here for now
-cfg = get_config(filename=Path(os.getcwd()) / 'config' / 'default_config.yml')
-cfg.d_data = Path('/home/jyao/local/data/orig/amd_octa/')
-cfg.d_model = Path('/home/jyao/local/data/orig/amd_octa/trained_models/')
+cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
+# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/orig/')
+cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
+cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
+
+# specify the loading mode: 'csv' vs 'folder'
+# if csv, then loading based on a csv file
+# if folder, then loading based on existing folder structure
+cfg.load_mode = 'csv'
+# cfg.load_mode = 'folder'
+cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa/')
+cfg.f_csv = 'FeatureLabeling.csv'
+
+# name of particular feature that will be used
+# note if want to test for disease label then have to specify this to be disease
+# otherwise it has to match what's in the CSV file column header
+# cfg.str_feature = 'disease'
+cfg.str_feature = 'IRF/SRF'
+cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
+cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
+# cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
 
 cfg.str_healthy = 'Normal'
 cfg.label_healthy = 0
@@ -22,7 +40,6 @@ cfg.label_dry_amd = 1
 cfg.str_cnv = 'CNV'
 cfg.label_cnv = 2
 cfg.num_classes = 3
-cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
 
 cfg.num_octa = 5
 cfg.str_angiography = 'Angiography'
@@ -50,7 +67,7 @@ cfg.lr = 5e-5
 cfg.lam = 1e-5
 cfg.overwrite = True
 
-cfg.balanced = True
+cfg.balanced = False
 cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.decimate = False
