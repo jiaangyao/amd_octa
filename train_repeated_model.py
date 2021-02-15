@@ -12,8 +12,8 @@ import time
 
 # Configuring the files here for now
 cfg = get_config(filename=Path(os.getcwd()) / 'config' / 'default_config.yml')
-cfg.d_data = Path('/home/jyao/Local/amd_octa/')
-cfg.d_model = Path('/home/jyao/Local/amd_octa/trained_models/')
+cfg.d_data = Path('/home/jyao/local/data/orig/amd_octa/')
+cfg.d_model = Path('/home/jyao/local/data/orig/amd_octa/trained_models/')
 
 cfg.str_healthy = 'Normal'
 cfg.label_healthy = 0
