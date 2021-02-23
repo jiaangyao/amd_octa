@@ -21,7 +21,7 @@ cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
 cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa/')
-cfg.f_csv = 'FeatureLabeling.csv'
+cfg.f_csv = 'BookMod.csv'
 
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
@@ -119,8 +119,14 @@ print("Test set accuracy: {}".format(test_set_score[1]))
 
 cfg.vec_acc = [train_set_score[1], valid_set_score[1], test_set_score[1]]
 
-y_true = np.argmax(ys[-1], axis=1)
-y_pred = np.argmax(model.predict(Xs[2]), axis=1)
+if cfg.num_classes == 2:
+    y_true = ys[-1]
+    y_pred = model.predict(Xs[2])
+    y_pred[y_pred >= 0.5] = 1
+    y_pred[y_pred < 0.5] = 0
+else:
+    y_true = np.argmax(ys[-1], axis=1)
+    y_pred = np.argmax(model.predict(Xs[2]), axis=1)
 
 cfg.y_test_true = y_true
 cfg.y_test_pred = y_pred

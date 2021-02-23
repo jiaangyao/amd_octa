@@ -22,7 +22,7 @@ cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
 cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa/')
-cfg.f_csv = 'FeatureLabeling.csv'
+cfg.f_csv = 'BookMod.csv'
 
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
@@ -128,8 +128,14 @@ for i in range(cfg.n_repeats):
     vec_valid_acc.append(valid_set_score[1])
     vec_test_acc.append(test_set_score[1])
 
-    y_true = np.argmax(ys[-1], axis=1)
-    y_pred = np.argmax(model.predict(Xs[2]), axis=1)
+    if cfg.num_classes == 2:
+        y_true = ys[-1]
+        y_pred = model.predict(Xs[2])
+        y_pred[y_pred >= 0.5] = 1
+        y_pred[y_pred < 0.5] = 0
+    else:
+        y_true = np.argmax(ys[-1], axis=1)
+        y_pred = np.argmax(model.predict(Xs[2]), axis=1)
 
     vec_y_true.append(y_true)
     vec_y_pred.append(y_pred)
@@ -145,7 +151,7 @@ y_true = np.concatenate(vec_y_true, axis=0)
 y_pred = np.concatenate(vec_y_pred, axis=0)
 
 f_model = "{}_{}".format(cfg.str_model, time.strftime("%Y%m%d_%H%M%S"))
-cfg.p_figure = Path('/home/jyao/Downloads/conf_matrix_repeated_seed_fixed/') / cfg.str_model / f_model
+cfg.p_figure = pathlib.Path('/home/jyao/Downloads/conf_matrix_repeated_seed_fixed/') / cfg.str_model / f_model
 cfg.p_figure.mkdir(exist_ok=True, parents=True)
 
 plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=cfg.str_model)

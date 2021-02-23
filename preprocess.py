@@ -397,14 +397,34 @@ def data_loading(vec_idx_patient, cfg):
 
         cfg.vec_str_patients = vec_str_patients
 
+        # TODO: verify that this actually works
+        # check if there are only two labels present, which is the case for many features
+        if len(np.unique(y)) == 2 and cfg.str_feature != 'disease':
+            cfg.num_classes = 2
+            cfg.binary_class = True
+
+            vec_str_labels_temp = []
+            for i in range(cfg.num_classes):
+                vec_str_labels_temp.append(cfg.vec_str_labels[np.unique(y)[i]])
+            cfg.vec_str_labels = vec_str_labels_temp
+
+            # correct for labels where there are skips
+            y_temp = y.copy()
+            if not np.all(np.unique(y) == np.arange(0, cfg.num_classes)):
+                for i in range(cfg.num_classes):
+                    y_temp[y_temp == np.unique(y)[i]] = np.arange(0, cfg.num_classes)[i]
+            y = y_temp
+
+        elif len(np.unique(y)) == 2 and cfg.str_feature == 'disease':
+            raise Exception('There should be three disease labels')
+
+        elif len(np.unique(y)) == 4:
+            raise Exception('Too many labels')
+
     else:
         raise Exception('Undefined load mode')
 
     return X, y
-
-
-def load_specific_label_csv(vec_idx, label_class, cfg):
-    pass
 
 
 def load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_feature, cfg):
@@ -482,10 +502,6 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
             continue
         # test for the label independently as well
         rel_idx_patient_id = np.where(vec_str_patient_id == vec_full_idx[i])[0][0]
-
-        if vec_str_patient_id[rel_idx_patient_id] in [92, 93, 121]:
-            print("Mismatch between CSV and data directory for patient {}, skipping...".format(vec_full_idx[i]))
-            continue
 
         # now unpack the data
         if len(packed_x_curr) == 2:

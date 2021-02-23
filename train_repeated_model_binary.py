@@ -118,7 +118,7 @@ for i in range(cfg.n_repeats):
 
         y_train = y_train[:n_train_decimate, :]
 
-    model = get_model_binary('arch_010_binary', cfg)
+    model = get_model('arch_010', cfg)
     callbacks = get_callbacks(cfg)
 
     if not cfg.decimate:
