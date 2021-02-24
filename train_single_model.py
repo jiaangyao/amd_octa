@@ -12,15 +12,15 @@ from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix
 # Configuring the files here for now
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
 # cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/orig/')
-cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
-cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
+cfg.d_data = pathlib.Path('/hdd/kavi/test/amd_octa/patient_id/')
+cfg.d_model = pathlib.Path('/hdd/kavi/test/amd_octa/trained_models/')
 
 # specify the loading mode: 'csv' vs 'folder'
 # if csv, then loading based on a csv file
 # if folder, then loading based on existing folder structure
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
-cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa/')
+cfg.d_csv = pathlib.Path('/hdd/kavi/test/amd_octa/')
 cfg.f_csv = 'BookMod.csv'
 
 # name of particular feature that will be used
@@ -127,6 +127,15 @@ if cfg.num_classes == 2:
 else:
     y_true = np.argmax(ys[-1], axis=1)
     y_pred = np.argmax(model.predict(Xs[2]), axis=1)
+
+#Printing out true and pred labels for log reg
+print('Test set: ground truth')
+
+print(np.argmax(ys[2], 1)) #y_true?
+
+print('Test set: prediction')
+
+print(y_pred)
 
 cfg.y_test_true = y_true
 cfg.y_test_pred = y_pred

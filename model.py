@@ -1839,24 +1839,24 @@ def get_model(str_model, cfg):
         x_struct = Flatten()(x)
 
         # bscan pathway
-        x = Conv2D(5, kernel_size=(21, 21), kernel_initializer='he_uniform')(bscan_inputs)
-        x = ReLU()(x)
-        x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(x)
+        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan_inputs)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)
         x = Dropout(0.05)(x)
 
-        x = Conv2D(8, kernel_size=(15, 15), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = Conv2D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
         x = LeakyReLU(0.03)(x)
-        x = MaxPool2D(pool_size=(2, 2), strides=(2, 2))(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
 
-        x = Conv2D(10, kernel_size=(11, 11), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = Conv2D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
         x = LeakyReLU(0.03)(x)
-        x = MaxPool2D(pool_size=(2, 2))(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
 
-        x = Conv2D(15, kernel_size=(7, 7), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = Conv2D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
         x = LeakyReLU(0.03)(x)
-        x = MaxPool2D(pool_size=(2, 2))(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
         x_bscan = Flatten()(x)
 
