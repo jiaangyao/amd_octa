@@ -27,7 +27,7 @@ cfg.f_csv = 'BookMod.csv'
 # note if want to test for disease label then have to specify this to be disease
 # otherwise it has to match what's in the CSV file column header
 # cfg.str_feature = 'disease'
-cfg.str_feature = 'disease'
+cfg.str_feature = 'Scar'
 cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
 cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
 # cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
@@ -61,9 +61,9 @@ cfg.per_train = 0.6
 cfg.per_valid = 0.2
 cfg.per_test = 0.2
 
-cfg.n_epoch = 2
+cfg.n_epoch = 1000
 cfg.batch_size = 8
-cfg.es_patience = 1
+cfg.es_patience = 20
 cfg.es_min_delta = 1e-5
 cfg.lr = 5e-5
 cfg.lam = 1e-5
