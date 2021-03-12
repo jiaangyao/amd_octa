@@ -848,14 +848,18 @@ def _form_cubes(vec_f_image, num_octa, downscale_size, str_angiography, str_stru
                             vec_vol_f_image_structure_curr[dict_layer_order[str_layer]] = f_image
 
             #for 3d bscan cube
+            count = 1
             for str_layer in vec_str_layer:
-
-                    re_pattern_curr = '{}.tiff'.format(str(str_layer+1)) #1.tiff, 2.tiff, 3.tiff, etc.; str_layer starts at 0
+                    #print(count) 
+                    re_pattern_curr = '{}.tiff'.format(str(count)) #1.tiff, 2.tiff, 3.tiff, etc.; str_layer starts at 0
 
                     re_hits = re.findall(re_pattern_curr, p_f_image_filename, re.I)
 
                     if re_hits:
                         vec_vol_f_image_bscan3d_curr[dict_layer_order[str_layer]] = f_image
+                    
+                    count = count + 1
+
 
     # Test if we have all data from this subject
     # TODO: think about using masking if cases where we don't have enough data
