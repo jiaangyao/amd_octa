@@ -67,7 +67,7 @@ def preprocess(vec_idx_patient, cfg):
                 bscan_shape.extend(list(x_bscan_train.shape[1:]))
 
                 bscan3d_shape = [x_bscan3d_train_rs.shape[0]]
-                bscani3d_shape.extend(list(x_bscan3d_train.shape[1:]))
+                bscan3d_shape.extend(list(x_bscan3d_train.shape[1:]))
 
                 x_angiography = x_angiography_train_rs.reshape(angio_shape)
                 x_structure = x_structure_train_rs.reshape(structure_shape)
@@ -520,16 +520,32 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
         vec_f_image = glob.glob(str(d_data / '[Pp]atient {}'.format(vec_full_idx[i]) / '**' / '*.bmp'),
                                 recursive=True)
 
+        vec_f_imageBscan3d = glob.glob(str(d_data3d / '{}'.format(vec_full_idx[i]) / '**' / '*.tiff'),
+                                recursive=True)
+
+        #print(vec_f_imageBscan3d)
+
         if len(vec_f_image) == 0:
             vec_f_image = glob.glob(
                 str(d_data / '[Pp]atient {} - *'.format(vec_full_idx[i]) / '**' / '*.bmp'),
                 recursive=True)
 
-        if vec_f_image:
-            print("Loading data from patient {}".format(vec_full_idx[i]))
+        if len(vec_f_imageBscan3d) == 0:
+            vec_f_imageBscan3d = glob.glob(
+                str(d_data3d / '{}'.format(vec_full_idx[i]) / '**' / '*.tiff'),
+                recursive=True)
 
+        if vec_f_image:
+            #print(vec_f_image)
+            print("Loading data from patient {}".format(vec_full_idx[i]))
         else:
             print("Data not available for patient {}, skipping...".format(vec_full_idx[i]))
+
+        if vec_f_imageBscan3d:
+            print("Loading 3d bscan data from patient {}".format(vec_full_idx[i]))
+        
+        else:
+            print("Data (bscan3d) not available for patient {}, skipping...".format(vec_full_idx[i]))
 
         packed_x_curr, str_eye = _package_data(vec_f_image, downscale_size, num_octa, str_angiography, str_structure,
                                                str_bscan, vec_str_layer, str_bscan_layer, dict_layer_order)
@@ -663,7 +679,6 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, d_data3d, downsca
         vec_f_imageBscan3d = glob.glob(str(d_data3d / str_class / '[Pp]atient {}'.format(vec_full_idx[i]) / '**' / '*.tiff'),
                                 recursive=True)
 
-
         if len(vec_f_image) == 0:
             vec_f_image = glob.glob(
                 str(d_data / str_class / '[Pp]atient {} - *'.format(vec_full_idx[i]) / '**' / '*.bmp'),
@@ -675,9 +690,11 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, d_data3d, downsca
                 recursive=True)
 
         if vec_f_image:
+            print(vec_f_image)
             print("Loading data from patient {}".format(vec_full_idx[i]))
 
         if vec_f_imageBscan3d:
+            print(vec_f_imageBscan3d)
             print("Loading 3d bscan data from patient {}".format(vec_full_idx[i]))
 
 

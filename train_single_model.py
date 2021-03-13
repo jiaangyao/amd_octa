@@ -14,7 +14,7 @@ cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config
 # cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/orig/')
 cfg.d_data = pathlib.Path('/hdd/kavi/test/amd_octa/patient_id/')
 cfg.d_model = pathlib.Path('/hdd/kavi/test/amd_octa/trained_models/')
-cfg.d_data3D = pathlib.Path('/hdd/kavi/test/amd_octa/bscan3d/')
+cfg.d_data3D = pathlib.Path('/hdd/kavi/test/amd_octa/hd5LineScans/')
 
 
 # specify the loading mode: 'csv' vs 'folder'
