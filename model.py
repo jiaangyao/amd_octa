@@ -1783,6 +1783,7 @@ def get_model(str_model, cfg):
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
+        bscan3d_inputs = Input(shape=cfg.sample_size[0])
 
         # angiography pathway
         x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
@@ -1839,22 +1840,22 @@ def get_model(str_model, cfg):
         x_struct = Flatten()(x)
 
         # bscan pathway
-        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan_inputs)
+        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
         x = LeakyReLU()(x)
         x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)
         x = Dropout(0.05)(x)
 
-        x = Conv2D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
         x = LeakyReLU(0.03)(x)
         x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
 
-        x = Conv2D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = Conv3D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
         x = LeakyReLU(0.03)(x)
         x = MaxPooling3D(pool_size=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
 
-        x = Conv2D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
         x = LeakyReLU(0.03)(x)
         x = MaxPooling3D(pool_size=(2, 2, 1))(x)
         x = Dropout(0.2)(x)
@@ -1880,7 +1881,7 @@ def get_model(str_model, cfg):
             y = Dense(cfg.num_classes, activation='softmax')(x)
             str_loss = 'categorical_crossentropy'
 
-        model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs], outputs=y)
+        model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs, bscan3d_inputs], outputs=y)
         model.summary()
 
         model.compile(optimizer=RMSprop(lr=cfg.lr), loss=str_loss, metrics=['accuracy'])

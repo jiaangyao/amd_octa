@@ -11,7 +11,9 @@ from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix
 
 # Configuring the files here for now
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
-# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/orig/')
+# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
+# cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
+# cfg.d_data3D = pathlib.Path('/home/jyao/local/data/amd_octa/hd5LineScans/')
 cfg.d_data = pathlib.Path('/hdd/kavi/test/amd_octa/patient_id/')
 cfg.d_model = pathlib.Path('/hdd/kavi/test/amd_octa/trained_models/')
 cfg.d_data3D = pathlib.Path('/hdd/kavi/test/amd_octa/hd5LineScans/')
@@ -22,6 +24,7 @@ cfg.d_data3D = pathlib.Path('/hdd/kavi/test/amd_octa/hd5LineScans/')
 # if folder, then loading based on existing folder structure
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
+# cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa')
 cfg.d_csv = pathlib.Path('/hdd/kavi/test/amd_octa/')
 cfg.f_csv = 'BookMod.csv'
 
@@ -48,11 +51,17 @@ cfg.str_structure = 'Structure'
 cfg.str_bscan = 'B-Scan'
 
 cfg.vec_str_layer = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
+cfg.vec_str_layer_bscan3d = ['1', '2', '3', '4', '5']
 cfg.dict_layer_order = {'Deep': 0,
                         'Avascular': 1,
                         'ORCC': 2,
                         'Choriocapillaris': 3,
                         'Choroid': 4}
+cfg.dict_layer_order_bscan3d = {'1': 0,
+                                '2': 1,
+                                '3': 2,
+                                '4': 3,
+                                '5': 4}
 cfg.str_bscan_layer = 'Flow'
 
 cfg.downscale_size = [256, 256]
@@ -96,7 +105,7 @@ print("x_test B scan shape: {}".format(Xs[2][2].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-model = get_model('arch_009', cfg)
+model = get_model('arch_022', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
@@ -130,10 +139,10 @@ else:
     y_true = np.argmax(ys[-1], axis=1)
     y_pred = np.argmax(model.predict(Xs[2]), axis=1)
 
-#Printing out true and pred labels for log reg
+# Printing out true and pred labels for log reg
 print('Test set: ground truth')
 
-print(np.argmax(ys[2], 1)) #y_true?
+print(np.argmax(ys[2], 1))  # y_true?
 
 print('Test set: prediction')
 

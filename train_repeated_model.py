@@ -47,11 +47,17 @@ cfg.str_structure = 'Structure'
 cfg.str_bscan = 'B-Scan'
 
 cfg.vec_str_layer = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
+cfg.vec_str_layer_bscan3d = ['1', '2', '3', '4', '5']
 cfg.dict_layer_order = {'Deep': 0,
                         'Avascular': 1,
                         'ORCC': 2,
                         'Choriocapillaris': 3,
                         'Choroid': 4}
+cfg.dict_layer_order_bscan3d = {'1': 0,
+                                '2': 1,
+                                '3': 2,
+                                '4': 3,
+                                '5': 4}
 cfg.str_bscan_layer = 'Flow'
 
 cfg.downscale_size = [256, 256]
