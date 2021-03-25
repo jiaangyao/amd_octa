@@ -1140,6 +1140,124 @@ def get_model(str_model, cfg):
 
         return model
 
+    if str_model == 'arch_022b':
+        """
+        arch_010 + bscan3D - OCT structural pathway
+
+        Test 1: 10 repeated runs
+        cfg.lr = 5e-5
+        cfg.lam = 1e-5
+        cfg.downscale_size = [256, 256]
+
+        balanced sample
+        no SMOTE
+
+        number of parameters: 339k
+        Train, valid, test acc: [90.4+3.2, 73.5+5.1, 68.5+7.7] (avg + standard error)
+        
+        Test 2: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 339k
+            
+            new dataset: 10/24
+        
+            Train, valid, test acc: [87.9+4.5, 74.3+5.5, 70.4+6.1] (avg + standard error)
+            
+        Test 3: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 339k
+            
+            new dataset: 10/24
+            Fixed random seed: 68
+        
+            Train, valid, test acc: [89.6+6.0, 78.1+6.4, 75.2+5.8] (avg + standard error)
+
+        """
+
+        angiography_inputs = Input(shape=cfg.sample_size[0])
+        structure_inputs = Input(shape=cfg.sample_size[0])
+        bscan_inputs = Input(shape=cfg.sample_size[1])
+        bscan3d_inputs = Input(shape=cfg.sample_size[0])
+
+        # angiography pathway
+        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
+                   kernel_regularizer=l1(cfg.lam))(angiography_inputs)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.1)(x)
+
+        x = Conv3D(10, kernel_size=(10, 10, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+        x_angio = Flatten()(x)
+
+        # bscan3d pathway
+        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
+        x = LeakyReLU()(x)
+        x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)
+        x = Dropout(0.05)(x)
+
+        x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1))(x)
+        x = Dropout(0.2)(x)
+
+        x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+        x = LeakyReLU(0.03)(x)
+        x = MaxPooling3D(pool_size=(2, 2, 1))(x)
+        x = Dropout(0.2)(x)
+        x_bscan = Flatten()(x)
+
+        x = Concatenate()([x_angio, x_bscan])
+        # Dense layer
+        x = Flatten()(x)
+        x = Dropout(0.05)(x)
+
+        x = Dense(64, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.3)(x)
+
+        x = Dense(16, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+
+        if cfg.binary_class:
+            y = Dense(1, activation='sigmoid')(x)
+            str_loss = 'binary_crossentropy'
+        else:
+            y = Dense(cfg.num_classes, activation='softmax')(x)
+            str_loss = 'categorical_crossentropy'
+
+        model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs, bscan3d_inputs], outputs=y)
+        model.summary()
+
+        model.compile(optimizer=RMSprop(lr=cfg.lr), loss=str_loss, metrics=['accuracy'])
+
+        return model
+
+
     if str_model == 'arch_013':
         """
         B scan model from Kavi, converted to functional API
@@ -1839,7 +1957,7 @@ def get_model(str_model, cfg):
         x = Dropout(0.2)(x)
         x_struct = Flatten()(x)
 
-        # bscan pathway
+        # bscan3d pathway
         x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
         x = LeakyReLU()(x)
         x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)

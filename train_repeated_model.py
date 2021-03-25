@@ -13,22 +13,27 @@ import time
 # Configuring the files here for now
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
 # cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/orig/')
-cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
-cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
+# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
+# cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
+# cfg.d_data3D = pathlib.Path('/home/jyao/local/data/amd_octa/hd5LineScans/')
+cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
+cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
+cfg.d_data3D = pathlib.Path('/home/kavi/Downloads/amd_octa_data/hd5LineScans/')
+
 
 # specify the loading mode: 'csv' vs 'folder'
 # if csv, then loading based on a csv file
 # if folder, then loading based on existing folder structure
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
-cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa/')
+cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
 cfg.f_csv = 'BookMod.csv'
 
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
 # otherwise it has to match what's in the CSV file column header
 # cfg.str_feature = 'disease'
-cfg.str_feature = 'IRF/SRF'
+cfg.str_feature = 'disease'
 cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
 cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
 # cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
@@ -85,6 +90,7 @@ cfg.n_repeats = 10
 vec_idx_healthy = [1, 250]
 vec_idx_dry_amd = [1, 250]
 vec_idx_cnv = [1, 250]
+vec_idx_patient = [1, 250]
 
 vec_train_acc = []
 vec_valid_acc = []
@@ -102,7 +108,9 @@ for i in range(cfg.n_repeats):
     print("\n\nIteration: {}".format(i + 1))
 
     # Preprocessing
-    Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg)
+    #Xs, ys = preprocess(vec_idx_healthy, vec_idx_dry_amd, vec_idx_cnv, cfg)
+    Xs, ys = preprocess(vec_idx_patient, cfg)
+
 
     print("\nx_train Angiography cube shape: {}".format(Xs[0][0].shape))
     print("x_train Structure OCT cube shape: {}".format(Xs[0][1].shape))
@@ -119,7 +127,7 @@ for i in range(cfg.n_repeats):
     print("x_test B scan shape: {}".format(Xs[2][2].shape))
     print("y_test onehot shape: {}".format(ys[2].shape))
 
-    model = get_model('arch_010', cfg)
+    model = get_model('arch_022', cfg)
     callbacks = get_callbacks(cfg)
 
     h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
@@ -157,7 +165,7 @@ y_true = np.concatenate(vec_y_true, axis=0)
 y_pred = np.concatenate(vec_y_pred, axis=0)
 
 f_model = "{}_{}".format(cfg.str_model, time.strftime("%Y%m%d_%H%M%S"))
-cfg.p_figure = pathlib.Path('/home/jyao/Downloads/conf_matrix_repeated_seed_fixed/') / cfg.str_model / f_model
+cfg.p_figure = pathlib.Path('/home/kavi/Downloads/conf_matrix_repeated_seed_fixed/') / cfg.str_model / f_model
 cfg.p_figure.mkdir(exist_ok=True, parents=True)
 
 plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=cfg.str_model)

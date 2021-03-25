@@ -14,9 +14,9 @@ cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config
 # cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
 # cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
 # cfg.d_data3D = pathlib.Path('/home/jyao/local/data/amd_octa/hd5LineScans/')
-cfg.d_data = pathlib.Path('/hdd/kavi/test/amd_octa/patient_id/')
-cfg.d_model = pathlib.Path('/hdd/kavi/test/amd_octa/trained_models/')
-cfg.d_data3D = pathlib.Path('/hdd/kavi/test/amd_octa/hd5LineScans/')
+cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
+cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
+cfg.d_data3D = pathlib.Path('/home/kavi/Downloads/amd_octa_data/hd5LineScans/')
 
 
 # specify the loading mode: 'csv' vs 'folder'
@@ -25,14 +25,14 @@ cfg.d_data3D = pathlib.Path('/hdd/kavi/test/amd_octa/hd5LineScans/')
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
 # cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa')
-cfg.d_csv = pathlib.Path('/hdd/kavi/test/amd_octa/')
+cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
 cfg.f_csv = 'BookMod.csv'
 
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
 # otherwise it has to match what's in the CSV file column header
 # cfg.str_feature = 'disease'
-cfg.str_feature = 'IRF/SRF'
+cfg.str_feature = 'disease'
 cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
 cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
 # cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
@@ -105,7 +105,7 @@ print("x_test B scan shape: {}".format(Xs[2][2].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-model = get_model('arch_022', cfg)
+model = get_model('arch_022b', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
