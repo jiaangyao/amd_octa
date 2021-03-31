@@ -11,23 +11,25 @@ from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix
 
 # Configuring the files here for now
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
-# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/orig/')
-cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
+cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/FinalData/')
 cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
+# cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
+# cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
 
 # specify the loading mode: 'csv' vs 'folder'
 # if csv, then loading based on a csv file
 # if folder, then loading based on existing folder structure
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
-cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa/')
-cfg.f_csv = 'BookMod.csv'
+cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa')
+# cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
+cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
 # otherwise it has to match what's in the CSV file column header
-# cfg.str_feature = 'disease'
-cfg.str_feature = 'Scar'
+cfg.str_feature = 'disease'
+# cfg.str_feature = 'Scar'
 cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
 cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
 # cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
@@ -46,11 +48,17 @@ cfg.str_structure = 'Structure'
 cfg.str_bscan = 'B-Scan'
 
 cfg.vec_str_layer = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
+cfg.vec_str_layer_bscan3d = ['1', '2', '3', '4', '5']
 cfg.dict_layer_order = {'Deep': 0,
                         'Avascular': 1,
                         'ORCC': 2,
                         'Choriocapillaris': 3,
                         'Choroid': 4}
+cfg.dict_layer_order_bscan3d = {'1': 0,
+                                '2': 1,
+                                '3': 2,
+                                '4': 3,
+                                '5': 4}
 cfg.str_bscan_layer = 'Flow'
 
 cfg.downscale_size = [256, 256]
@@ -73,7 +81,7 @@ cfg.random_seed = 68
 cfg.use_random_seed = True
 cfg.binary_class = False
 
-vec_idx_patient = [1, 250]
+vec_idx_patient = [1, 310]
 
 # Preprocessing
 Xs, ys = preprocess(vec_idx_patient, cfg)
@@ -94,7 +102,7 @@ print("x_test B scan shape: {}".format(Xs[2][2].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-model = get_model('arch_009', cfg)
+model = get_model('arch_022b', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
@@ -127,6 +135,15 @@ if cfg.num_classes == 2:
 else:
     y_true = np.argmax(ys[-1], axis=1)
     y_pred = np.argmax(model.predict(Xs[2]), axis=1)
+
+# Printing out true and pred labels for log reg
+print('Test set: ground truth')
+
+print(np.argmax(ys[2], 1))  # y_true?
+
+print('Test set: prediction')
+
+print(y_pred)
 
 cfg.y_test_true = y_true
 cfg.y_test_pred = y_pred
