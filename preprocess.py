@@ -41,7 +41,6 @@ def preprocess(vec_idx_patient, cfg):
                 x_bscan_train = x_train[2]
                 x_bscan3d_train = x_train[3]
 
-
                 y_train = np.argmax(ys[0], axis=1)
 
                 x_angiography_train_rs = x_angiography_train.reshape(x_angiography_train.shape[0], -1)
@@ -468,7 +467,7 @@ def load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featur
     :return:
     """
     x, y, vec_str_patients = _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_feature,
-                                                cfg.d_data, cfg.d_data3D, cfg.downscale_size, cfg.num_octa,
+                                                cfg.d_data, cfg.downscale_size, cfg.num_octa,
                                                 cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
                                                 cfg.vec_str_layer, cfg.vec_str_layer_bscan3d, cfg.str_bscan_layer,
                                                 cfg.dict_layer_order, cfg.dict_layer_order_bscan3d)
@@ -477,7 +476,7 @@ def load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featur
 
 
 def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_feature,
-                       d_data, d_data3d, downscale_size, num_octa, str_angiography, str_structure,
+                       d_data, downscale_size, num_octa, str_angiography, str_structure,
                        str_bscan, vec_str_layer, vec_str_layer_bscan3d,
                        str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d):
     """
@@ -508,7 +507,6 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
     x_bscan = []
     x_bscan3d = []
 
-
     y = []
 
     # create a list to append all patients
@@ -519,32 +517,25 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
 
     # Loop through all the patients
     for i in range(len(vec_full_idx)):
-        vec_f_image = glob.glob(str(d_data / '[Pp]atient {}'.format(vec_full_idx[i]) / '**' / '*.bmp'),
-                                recursive=True)
+        vec_f_image = glob.glob(str(d_data / '{}'.format(vec_full_idx[i]) / '*' / 'OCTA' / '*.bmp'), recursive=True)
+        vec_f_imageBscan3d = glob.glob(str(d_data / '{}'.format(vec_full_idx[i]) / '*' / '*.tiff'), recursive=True)
 
-        vec_f_imageBscan3d = glob.glob(str(d_data3d / '{}'.format(vec_full_idx[i]) / '**' / '*.tiff'),
-                                recursive=True)
-
-        if len(vec_f_image) == 0:
-            vec_f_image = glob.glob(
-                str(d_data / '[Pp]atient {} - *'.format(vec_full_idx[i]) / '**' / '*.bmp'),
-                recursive=True)
-
-        if len(vec_f_imageBscan3d) == 0:
-            vec_f_imageBscan3d = glob.glob(
-                str(d_data3d / '{}'.format(vec_full_idx[i]) / '**' / '*.tiff'),
-                recursive=True)
-
+        # try old pattern again also
+        if not vec_f_image:
+            vec_f_image = glob.glob(str(d_data / '{}'.format(vec_full_idx[i]) / '*' / '2D Layers' / '*.bmp'),
+                                    recursive=True)
         if vec_f_image:
             print("Loading data from patient {}".format(vec_full_idx[i]))
         else:
             print("Data not available for patient {}, skipping...".format(vec_full_idx[i]))
+            continue
 
         if vec_f_imageBscan3d:
             print("Loading 3d bscan data from patient {}".format(vec_full_idx[i]))
         
         else:
             print("Data (bscan3d) not available for patient {}, skipping...".format(vec_full_idx[i]))
+            continue
 
         packed_x_curr, str_eye = _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa,
                                                str_angiography, str_structure, str_bscan,
@@ -552,7 +543,9 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
                                                dict_layer_order, dict_layer_order_bscan3d)
 
         if packed_x_curr is None:
+            print("Unable to process data for patient {}, skipping...".format(vec_full_idx[i]))
             continue
+
         # test for the label independently as well
         rel_idx_patient_id = np.where(vec_str_patient_id == vec_full_idx[i])[0][0]
 
@@ -623,7 +616,7 @@ def load_specific_label_folder(vec_idx_class, str_class, label_class, cfg):
     :return:
     """
     x_class, y_class, vec_str_class = _load_data_folder(vec_idx_class, str_class, label_class,
-                                                        cfg.d_data, cfg.d_data3D, cfg.downscale_size, cfg.num_octa,
+                                                        cfg.d_data, cfg.downscale_size, cfg.num_octa,
                                                         cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
                                                         cfg.vec_str_layer, cfg.vec_str_layer_bscan3d, cfg.str_bscan_layer,
                                                         cfg.dict_layer_order, cfg.dict_layer_order_bscan3d)
@@ -631,7 +624,7 @@ def load_specific_label_folder(vec_idx_class, str_class, label_class, cfg):
     return x_class, y_class, vec_str_class
 
 
-def _load_data_folder(vec_idx, str_class, label_class, d_data, d_data3d, downscale_size, num_octa,
+def _load_data_folder(vec_idx, str_class, label_class, d_data, downscale_size, num_octa,
                       str_angiography, str_structure, str_bscan, vec_str_layer, vec_str_layer_bscan3d,
                       str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d):
     """
@@ -663,7 +656,6 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, d_data3d, downsca
     x_bscan = []
     x_bscan3d = []
 
-
     y = []
 
     # create a list to append all patients
@@ -674,33 +666,26 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, d_data3d, downsca
 
     # Loop through all the runs
     for i in range(len(vec_full_idx)):
-        vec_f_image = glob.glob(str(d_data / str_class / '[Pp]atient {}'.format(vec_full_idx[i]) / '**' / '*.bmp'),
+        vec_f_image = glob.glob(str(d_data / str_class / '{}'.format(vec_full_idx[i]) / '*' / 'OCTA' / '*.bmp'),
                                 recursive=True)
+        vec_f_imageBscan3d = glob.glob(str(d_data / str_class / '{}'.format(vec_full_idx[i]) / '*' / '*.tiff'),
+                                       recursive=True)
 
-        vec_f_imageBscan3d = glob.glob(str(d_data3d / str_class / '[Pp]atient {}'.format(vec_full_idx[i]) / '**' / '*.tiff'),
-                                recursive=True)
-
-        if len(vec_f_image) == 0:
-            vec_f_image = glob.glob(
-                str(d_data / str_class / '[Pp]atient {} - *'.format(vec_full_idx[i]) / '**' / '*.bmp'),
-                recursive=True)
-        
-        if len(vec_f_imageBscan3d) == 0:
-            vec_f_imageBscan3d = glob.glob(
-                str(d_data3d / str_class / '[Pp]atient {} - *'.format(vec_full_idx[i]) / '**' / '*.tiff'),
-                recursive=True)
+        # try old pattern again also
+        if not vec_f_image:
+            vec_f_image = glob.glob(str(d_data / '{}'.format(vec_full_idx[i]) / '*' / '2D Layers' / '*.bmp'),
+                                    recursive=True)
 
         if vec_f_image:
-            print(vec_f_image)
             print("Loading data from patient {}".format(vec_full_idx[i]))
+        else:
+            print("Data not available for patient {}, skipping...".format(vec_full_idx[i]))
+            continue
 
         if vec_f_imageBscan3d:
-            print(vec_f_imageBscan3d)
             print("Loading 3d bscan data from patient {}".format(vec_full_idx[i]))
-
-
         else:
-            # print("Data not available for patient {}, skipping...".format(vec_full_idx[i]))
+            print("Data (bscan3d) not available for patient {}, skipping...".format(vec_full_idx[i]))
             continue
 
         packed_x_curr, str_eye = _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa,
@@ -709,7 +694,7 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, d_data3d, downsca
                                                dict_layer_order, dict_layer_order_bscan3d)
 
         if packed_x_curr is None:
-            continue
+            raise Exception("Unable to process data for patient {}, skipping...".format(vec_full_idx[i]))
 
         # now unpack the data
         if len(packed_x_curr) == 2:
@@ -718,7 +703,6 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, d_data3d, downsca
                 x_structure.append(packed_x_curr[j][1])
                 x_bscan.append(packed_x_curr[j][2])
                 x_bscan3d.append(packed_x_curr[j][3])
-
 
                 # append the class label also
                 y.append(label_class)
@@ -732,7 +716,6 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, d_data3d, downsca
             x_structure.append(packed_x_curr[1])
             x_bscan.append(packed_x_curr[2])
             x_bscan3d.append(packed_x_curr[3])
-
 
             # append the class label also
             y.append(label_class)
@@ -774,13 +757,13 @@ def _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa, str
     """
 
     # Test if the dataset has data from both eyes
-    if any("OD/" in s for s in vec_f_image) & any("OS/" in s for s in vec_f_image):
+    if any("/OD/" in s for s in vec_f_image) & any("/OS/" in s for s in vec_f_image):
 
-        vec_f_image_OD = [s for s in vec_f_image if "OD" in s]
-        vec_f_image_OS = [s for s in vec_f_image if "OS" in s]
+        vec_f_image_OD = [s for s in vec_f_image if "/OD/" in s]
+        vec_f_image_OS = [s for s in vec_f_image if "/OS/" in s]
 
-        vec_f_imageBscan3d_OD = [s for s in vec_f_imageBscan3d if "OD" in s]
-        vec_f_imageBscan3d_OS = [s for s in vec_f_imageBscan3d if "OS" in s]
+        vec_f_imageBscan3d_OD = [s for s in vec_f_imageBscan3d if "/OD/" in s]
+        vec_f_imageBscan3d_OS = [s for s in vec_f_imageBscan3d if "/OS/" in s]
 
         x_curr_OD = _form_cubes(vec_f_image_OD, vec_f_imageBscan3d_OD, num_octa, downscale_size,
                                 str_angiography, str_structure, str_bscan, vec_str_layer, vec_str_layer_bscan3d,
@@ -853,7 +836,9 @@ def _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, str_a
     vec_vol_f_image_bscan_curr = {}
     vec_vol_f_image_bscan3d_curr = {}
 
-
+    count_angiography_hit = 0
+    count_structure_hit = 0
+    count_bscan_hit = 0
     for f_image in vec_f_image:
         p_f_image = pathlib.Path(f_image)
         p_f_image_filename = p_f_image.name
@@ -866,6 +851,7 @@ def _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, str_a
 
                 if re_hits:
                     vec_vol_f_image_bscan_curr[len(vec_vol_f_image_bscan_curr)] = f_image
+                    count_bscan_hit += 1
             else:
                 for str_layer in vec_str_layer:
                     re_pattern_curr = '.*{}_{}.bmp'.format(str_image_type, str_layer)
@@ -875,24 +861,54 @@ def _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, str_a
                     if re_hits:
                         if str_image_type == str_angiography:
                             vec_vol_f_image_angiography_curr[dict_layer_order[str_layer]] = f_image
-
+                            count_angiography_hit += 1
                         else:
                             vec_vol_f_image_structure_curr[dict_layer_order[str_layer]] = f_image
+                            count_structure_hit += 1
 
+    if (count_angiography_hit != len(vec_str_layer)) or (count_structure_hit != len(vec_str_layer)) or (count_bscan_hit != 1):
+        raise Exception('Failed to locate all the OCTA images')
+
+    count_bscan3d_hit = 0
     for f_image_bscan3d in vec_f_imageBscan3d:
         p_f_image_bscan3d = pathlib.Path(f_image_bscan3d)
         p_f_image_bscan3d_filename = p_f_image_bscan3d.name
 
         #for 3d bscan cube
-        count = 1
         for str_layer_bscan3d in vec_str_layer_bscan3d:
-                re_pattern_curr = '{}.tiff'.format(str(count)) #1.tiff, 2.tiff, 3.tiff, etc.; str_layer starts at 0
+            if  p_f_image_bscan3d_filename == '{}.tiff'.format(str_layer_bscan3d):
+                vec_vol_f_image_bscan3d_curr[dict_layer_order_bscan3d[str_layer_bscan3d]] = f_image_bscan3d
+                count_bscan3d_hit += 1
+
+    # in cases where no images were identified, try again with different pattern
+    if count_bscan3d_hit == 0:
+        # obtain the date strings at the end of the file
+        vec_img_timestamp = []
+        re_pattern_timestamp = '_O[DS]_(.*).tiff'
+        for f_image_bscan3d in vec_f_imageBscan3d:
+            p_f_image_bscan3d = pathlib.Path(f_image_bscan3d)
+            p_f_image_bscan3d_filename = p_f_image_bscan3d.name
+
+            str_img_timestamp = re.search(re_pattern_timestamp, p_f_image_bscan3d_filename).group(1)
+            vec_img_timestamp.append(int(str_img_timestamp))
+        vec_img_timestamp = np.stack(vec_img_timestamp, axis=-1)
+        vec_img_timestamp = np.sort(vec_img_timestamp)
+
+        # do actual detection and addition to the dictionary
+        for f_image_bscan3d in vec_f_imageBscan3d:
+            p_f_image_bscan3d = pathlib.Path(f_image_bscan3d)
+            p_f_image_bscan3d_filename = p_f_image_bscan3d.name
+
+            for idx_img_timestamp in range(len(vec_img_timestamp)):
+                img_timestamp = vec_img_timestamp[idx_img_timestamp]
+                re_pattern_curr = '.*_{}.tiff'.format(img_timestamp)
                 re_hits = re.findall(re_pattern_curr, p_f_image_bscan3d_filename, re.I)
-
                 if re_hits:
-                    vec_vol_f_image_bscan3d_curr[dict_layer_order_bscan3d[str_layer_bscan3d]] = f_image_bscan3d
+                    vec_vol_f_image_bscan3d_curr[idx_img_timestamp] = f_image_bscan3d
+                    count_bscan3d_hit += 1
 
-                count = count + 1
+    if count_bscan3d_hit != len(vec_str_layer_bscan3d):
+        raise Exception('Failed to locate all the 3D bscan images')
 
     # Test if we have all data from this subject
     # TODO: think about using masking if cases where we don't have enough data
@@ -915,12 +931,10 @@ def _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, str_a
     vol_bscan_curr = np.zeros([downscale_size[0], downscale_size[1], 1])
     vol_bscan3d_curr = np.zeros([downscale_size[0], downscale_size[1], num_octa, 1])
 
-
     _create_np_cubes(vol_angiography_curr, vec_vol_f_image_angiography_curr, downscale_size)
     _create_np_cubes(vol_structure_curr, vec_vol_f_image_structure_curr, downscale_size)
     _create_np_cubes(vol_bscan_curr, vec_vol_f_image_bscan_curr, downscale_size)
     _create_np_cubes(vol_bscan3d_curr, vec_vol_f_image_bscan3d_curr, downscale_size)
-
 
     x_curr = [vol_angiography_curr, vol_structure_curr, vol_bscan_curr, vol_bscan3d_curr]
 

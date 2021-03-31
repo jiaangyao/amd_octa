@@ -12,14 +12,10 @@ import time
 
 # Configuring the files here for now
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
-# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/orig/')
-# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
+# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/FinalData/')
 # cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
-# cfg.d_data3D = pathlib.Path('/home/jyao/local/data/amd_octa/hd5LineScans/')
 cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
 cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
-cfg.d_data3D = pathlib.Path('/home/kavi/Downloads/amd_octa_data/hd5LineScans/')
-
 
 # specify the loading mode: 'csv' vs 'folder'
 # if csv, then loading based on a csv file
