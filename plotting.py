@@ -41,7 +41,7 @@ def plot_training_acc(h, cfg, save=True):
         plt.show()
 
 
-def plot_norm_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None):
+def plot_norm_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None, cv_all=False):
     conf_matrix = confusion_matrix(y_true, y_pred)
 
     # plot the confusion matrix
@@ -111,13 +111,17 @@ def plot_norm_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None):
             f_figure = 'norm_conf_matrix_{}.eps'.format(f_figure)
         else:
             f_figure = 'norm_conf_matrix.eps'
-        fig.savefig(str(cfg.p_figure / f_figure), format='eps')
+
+        if cv_all:
+            fig.savefig(str(cfg.p_figure_all / f_figure), format='eps')
+        else:
+            fig.savefig(str(cfg.p_figure / f_figure), format='eps')
         plt.close(fig)
     else:
         plt.show()
 
 
-def plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None):
+def plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None, cv_all=False):
     conf_matrix = confusion_matrix(y_true, y_pred)
     conf_matrix_copy = np.array(conf_matrix, copy=True)
 
@@ -187,7 +191,11 @@ def plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None):
             f_figure = 'raw_conf_matrix_{}.eps'.format(f_figure)
         else:
             f_figure = 'raw_conf_matrix.eps'
-        fig.savefig(str(cfg.p_figure / f_figure), format='eps')
+
+        if cv_all:
+            fig.savefig(str(cfg.p_figure_all / f_figure), format='eps')
+        else:
+            fig.savefig(str(cfg.p_figure / f_figure), format='eps')
         plt.close(fig)
 
     else:

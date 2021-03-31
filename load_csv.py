@@ -9,28 +9,28 @@ def load_csv_params(cfg):
     # get the valid columns in the CSV file to access
     # i.e. parsing the column of the patient id and OD and OS
     idx_col_all = np.arange(0, len(pd_csv_headers))
-    idx_col_patient_id = idx_col_all[pd_csv_headers.str.match('Pt\n')]
-    idx_col_OD_valid = idx_col_all[pd_csv_headers.str.match('OD\n')]
-    idx_col_OS_valid = idx_col_all[pd_csv_headers.str.match('OS\n')]
+    idx_col_patient_id = idx_col_all[pd_csv_headers.str.match('Pt\n')][0]
+    idx_col_OD_valid = idx_col_all[pd_csv_headers.str.match('OD\n')][0]
+    idx_col_OS_valid = idx_col_all[pd_csv_headers.str.match('OS\n')][0]
 
     # get the index of the columns corresponding to the features
     if cfg.str_feature != 'disease':
-        idx_col_OD_feature = idx_col_all[pd_csv_headers.str.match('OD: {}'.format(cfg.str_feature))]
-        idx_col_OS_feature = idx_col_all[pd_csv_headers.str.match('OS: {}'.format(cfg.str_feature))]
+        idx_col_OD_feature = idx_col_all[pd_csv_headers.str.match('OD: {}'.format(cfg.str_feature))][0]
+        idx_col_OS_feature = idx_col_all[pd_csv_headers.str.match('OS: {}'.format(cfg.str_feature))][0]
     else:
-        idx_col_OD_feature = idx_col_all[pd_csv_headers.str.match('OD\n')]
-        idx_col_OS_feature = idx_col_all[pd_csv_headers.str.match('OS\n')]
+        idx_col_OD_feature = idx_col_all[pd_csv_headers.str.match('OD\n')][0]
+        idx_col_OS_feature = idx_col_all[pd_csv_headers.str.match('OS\n')][0]
 
     # now obtain all the patient IDs and necessary labels
-    vec_str_patient_id = pd_csv[pd_csv_headers[idx_col_patient_id]].T.astype('int').to_numpy()[0]
+    vec_str_patient_id = pd_csv[pd_csv_headers[idx_col_patient_id]].T.astype('int').to_numpy()
 
     # these two variables hold the true disease label, 0 - excluded, 1 normal, 2 - Dry AMD, 3 - Wet AMD
-    vec_OD_valid = pd_csv[pd_csv_headers[idx_col_OD_valid][0]].to_numpy()
-    vec_OS_valid = pd_csv[pd_csv_headers[idx_col_OS_valid][0]].to_numpy()
+    vec_OD_valid = pd_csv[pd_csv_headers[idx_col_OD_valid]].to_numpy()
+    vec_OS_valid = pd_csv[pd_csv_headers[idx_col_OS_valid]].to_numpy()
 
     # obtain the correct feature labels
-    vec_OD_feature = pd_csv[pd_csv_headers[idx_col_OD_feature][0]].to_numpy()
-    vec_OS_feature = pd_csv[pd_csv_headers[idx_col_OS_feature][0]].to_numpy()
+    vec_OD_feature = pd_csv[pd_csv_headers[idx_col_OD_feature]].to_numpy()
+    vec_OS_feature = pd_csv[pd_csv_headers[idx_col_OS_feature]].to_numpy()
 
     # For OD/OS valid labels, test if all values in 0-3, set to 0 otherwise
     if vec_OD_valid.dtype == 'object':
@@ -64,5 +64,21 @@ def load_csv_params(cfg):
         vec_OS_feature = vec_OS_valid.astype(np.float)
         vec_OS_feature = vec_OS_feature - 1
         vec_OS_feature[vec_OS_feature < 0] = np.nan
+
+    out_csv = pd_csv.copy()
+    for idx_col in range(len(pd_csv_headers)):
+        if idx_col not in [idx_col_patient_id, idx_col_OD_valid, idx_col_OS_valid, idx_col_OD_feature, idx_col_OS_feature]:
+            out_csv.loc[:, pd_csv_headers[idx_col]] = np.nan
+
+    idx_row_all = np.arange(out_csv.shape[0])
+    idx_row_OD_valid = np.logical_not(np.isnan(out_csv.loc[:, pd_csv_headers[idx_col_OD_feature]].to_numpy()))
+    idx_row_OS_valid = np.logical_not(np.isnan(out_csv.loc[:, pd_csv_headers[idx_col_OS_feature]].to_numpy()))
+
+    out_csv.loc[idx_row_all[idx_row_OD_valid], pd_csv_headers[idx_col_OD_feature]] = 9999
+    out_csv.loc[idx_row_all[idx_row_OS_valid], pd_csv_headers[idx_col_OS_feature]] = 9999
+
+    cfg.pd_csv = pd_csv.copy()
+    cfg.out_csv = out_csv
+    cfg.vec_csv_col = [idx_col_patient_id, idx_col_OD_valid, idx_col_OS_valid, idx_col_OD_feature, idx_col_OS_feature]
 
     return vec_str_patient_id, vec_OD_feature, vec_OS_feature

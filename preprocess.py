@@ -94,6 +94,54 @@ def preprocess(vec_idx_patient, cfg):
     return Xs, ys
 
 
+def preprocess_cv(vec_idx_patient, cfg):
+    """
+    Cross validation mode of the preprocessing function
+
+    :param vec_idx_patient: list containing start and end indices of the patients
+    :param cfg: object holding all the training parameters
+
+    :return:
+    """
+    # Exception detection
+    if not cfg.binary_class:
+        if not cfg.num_classes == 3:
+            raise Exception('Three class classification specified but two classes requested')
+    else:
+        if not cfg.num_classes == 2:
+            raise Exception('Binary classification specified but three classes requested')
+    if not cfg.cv_mode:
+        raise Exception("CV mode should be enabled")
+    if cfg.num_cv_fold is None:
+        raise Exception("Should specify the number of cv folds")
+    if cfg.num_cv_fold != int(np.ceil(1 / cfg.per_test)):
+        raise Exception("Number of cv folds should match the test set percentage")
+    if (cfg.per_train + cfg.per_valid + cfg.per_test) != 1.0:
+        raise Exception("Percentage of train, validation and test sets should add to 1")
+
+    # load all data
+    [x_angiography, x_structure, x_bscan], y = data_loading(vec_idx_patient, cfg)
+
+    # split the data into training, validation and test set
+    if not cfg.balanced:
+        if cfg.use_random_seed:
+            with temp_seed(cfg.random_seed):
+                vec_Xs, vec_ys = _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg)
+        else:
+            vec_Xs, vec_ys = _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg)
+
+        # Don't need to do oversample anymore in the future
+        if cfg.oversample:
+            raise NotImplementedError
+
+    else:
+        # In the dataset there are huge imbalances for the feature labels... I don't think doing balanced training would
+        # be a good idea to be honest
+        raise NotImplementedError
+
+    return vec_Xs, vec_ys
+
+
 def _split_data_unbalanced(x_angiography, x_structure, x_bscan, x_bscan3d, y, cfg):
     while True:
         idx_permutation = np.random.permutation(x_angiography.shape[0])
@@ -147,6 +195,112 @@ def _split_data_unbalanced(x_angiography, x_structure, x_bscan, x_bscan3d, y, cf
     ys = [y_train, y_valid, y_test]
 
     return Xs, ys
+
+
+def _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg):
+    """
+    Unbalanced splitting of training, validation and test sets for cross validation mode
+
+    :param x_angiography: numpy array in the form (n_sample, width, height, num_octa, 1)
+    :param x_structure: numpy array in the form (n_sample, width, height, num_octa, 1)
+    :param x_bscan: numpy array in the form (n_sample, width, height, 1)
+    :param y: numpy array in the form (n_sample)
+    :param cfg: object holding all the training parameters
+
+    :return:
+    """
+
+    n_iter = 0
+    cfg.sample_size = [x_angiography.shape[1:], x_bscan.shape[1:]]
+    while True:
+        idx_orig = np.arange(0, x_angiography.shape[0], 1)
+        idx_permutation = np.random.permutation(x_angiography.shape[0])
+        vec_idx_test = np.array_split(idx_permutation, cfg.num_cv_fold)
+
+        n_train = int(np.ceil(len(idx_permutation) * cfg.per_train))
+        vec_check_fold = []
+        skip_to_next_loop = False
+
+        n_iter += 1
+        if n_iter > 200:
+            raise Exception("No valid splitting possible, check dataset and configuration")
+
+        # list of lists holding the data from all folds
+        vec_Xs = []
+        vec_ys = []
+
+        # list of list holding the absolute indices of all subjects
+        vec_idx_absolute = []
+
+        # loop through the folds
+        for i in range(cfg.num_cv_fold):
+            # extract the test set first
+            idx_test_curr = vec_idx_test[i]
+            x_angiography_test_curr = x_angiography[idx_test_curr, ...]
+            x_structure_test_curr = x_structure[idx_test_curr, ...]
+            x_bscan_test_curr = x_bscan[idx_test_curr, ...]
+            y_test_curr = y[idx_test_curr]
+
+            # obtain the indices for training and validation
+            idx_train_valid_sorted = np.setdiff1d(idx_orig, idx_test_curr)
+            idx_train_valid_permutation = np.random.permutation(idx_train_valid_sorted.shape[0])
+            idx_train_valid = idx_train_valid_sorted[idx_train_valid_permutation]
+
+            # extract the train and valid sets
+            idx_train_curr = idx_train_valid[:n_train]
+            idx_valid_curr = idx_train_valid[n_train:]
+
+            x_angiography_train_curr = x_angiography[idx_train_curr, ...]
+            x_structure_train_curr = x_structure[idx_train_curr, ...]
+            x_bscan_train_curr = x_bscan[idx_train_curr, ...]
+            y_train_curr = y[idx_train_curr]
+
+            x_angiography_valid_curr = x_angiography[idx_valid_curr, ...]
+            x_structure_valid_curr = x_structure[idx_valid_curr, ...]
+            x_bscan_valid_curr = x_bscan[idx_valid_curr, ...]
+            y_valid_curr = y[idx_valid_curr]
+
+            # test if all classes are present in all three sets
+            if len(np.unique(y_train_curr)) == cfg.num_classes and len(np.unique(y_valid_curr)) == cfg.num_classes \
+                    and len(np.unique(y_test_curr)) == cfg.num_classes:
+                vec_check_fold.append(True)
+            else:
+                skip_to_next_loop = True
+                break
+
+            x_train_curr = [x_angiography_train_curr, x_structure_train_curr, x_bscan_train_curr]
+            x_valid_curr = [x_angiography_valid_curr, x_structure_valid_curr, x_bscan_valid_curr]
+            x_test_curr = [x_angiography_test_curr, x_structure_test_curr, x_bscan_test_curr]
+
+            if not cfg.binary_class:
+                y_train_curr = to_categorical(y_train_curr, num_classes=cfg.num_classes)
+                y_valid_curr = to_categorical(y_valid_curr, num_classes=cfg.num_classes)
+                y_test_curr = to_categorical(y_test_curr, num_classes=cfg.num_classes)
+
+            # package all the data from the current fold
+            Xs_curr = [x_train_curr, x_valid_curr, x_test_curr]
+            ys_curr = [y_train_curr, y_valid_curr, y_test_curr]
+
+            # obtain the absolute indices
+            vec_idx_absolute_train = idx_train_curr
+            vec_idx_absolute_valid = idx_valid_curr
+            vec_idx_absolute_test_curr = idx_test_curr
+
+            # append everything to the list
+            vec_Xs.append(Xs_curr)
+            vec_ys.append(ys_curr)
+
+            vec_idx_absolute.append([vec_idx_absolute_train, vec_idx_absolute_valid, vec_idx_absolute_test_curr])
+
+        if skip_to_next_loop:
+            continue
+
+        if np.all(vec_check_fold):
+            break
+
+    cfg.vec_idx_absolute = vec_idx_absolute
+
+    return vec_Xs, vec_ys
 
 
 def _split_data(x_angiography, x_structure, x_bscan, x_bscan3d, y, cfg):
@@ -423,12 +577,13 @@ def data_loading(vec_idx_patient, cfg):
 
         vec_str_patient_id, vec_OD_feature, vec_OS_feature = load_csv_params(cfg)
 
-        X, y, vec_str_patients = load_all_data_csv(vec_idx_patient, vec_str_patient_id, vec_OD_feature,
-                                                   vec_OS_feature, cfg)
+        X, y, vec_str_patients, vec_out_csv_idx = load_all_data_csv(vec_idx_patient, vec_str_patient_id, vec_OD_feature,
+                                                                    vec_OS_feature, cfg)
 
         cfg.vec_str_patients = vec_str_patients
+        cfg.vec_out_csv_idx = vec_out_csv_idx
+        cfg.y_unique_label = np.unique(y)
 
-        # TODO: verify that this actually works
         # check if there are only two labels present, which is the case for many features
         if len(np.unique(y)) == 2 and cfg.str_feature != 'disease':
             cfg.num_classes = 2
@@ -466,19 +621,24 @@ def load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featur
     :param cfg: configuration file set by the user
     :return:
     """
-    x, y, vec_str_patients = _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_feature,
-                                                cfg.d_data, cfg.downscale_size, cfg.num_octa,
-                                                cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
-                                                cfg.vec_str_layer, cfg.vec_str_layer_bscan3d, cfg.str_bscan_layer,
-                                                cfg.dict_layer_order, cfg.dict_layer_order_bscan3d)
 
-    return x, y, vec_str_patients
+    x, y, vec_str_patients, vec_out_csv_idx = _load_all_data_csv(vec_idx, vec_str_patient_id, 
+                                                                 vec_OD_feature, vec_OS_feature,
+                                                                 cfg.d_data, cfg.downscale_size, cfg.num_octa, 
+                                                                 cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
+                                                                 cfg.vec_str_layer, cfg.vec_str_layer_bscan3d, 
+                                                                 cfg.str_bscan_layer, cfg.dict_layer_order, 
+                                                                 cfg.dict_layer_order_bscan3d, 
+                                                                 cfg.vec_csv_col)
+
+    return x, y, vec_str_patients, vec_out_csv_idx
 
 
 def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_feature,
                        d_data, downscale_size, num_octa, str_angiography, str_structure,
                        str_bscan, vec_str_layer, vec_str_layer_bscan3d,
-                       str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d):
+                       str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d, vec_csv_col):
+
     """
     Load all data from all patients without assigning the class label yet
 
@@ -497,6 +657,7 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
     :param str_bscan_layer: string that contains the type of b-scan images to be used in filename, e.g. Flow
     :param dict_layer_order: dictionary that contains the order in which the different layers will be organized
     :param dict_layer_order_bscan3d: dictionary that contains the order in which the bscans cubes will be organized
+    :param vec_csv_col: list of all the indices of relevant columns in the original csv file
 
     :return: a tuple in the form [x_angiography, x_structure, x_bscan], vec_str_patient, where each of x_class
     contains images from a single type of image and vec_str_patient would correspond to absolute
@@ -514,6 +675,11 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
 
     # create a list of all possible indices
     vec_full_idx = np.arange(vec_idx[0], vec_idx[1] + 1, 1)
+
+    # create a list of all valid entries in the csv file
+    vec_out_csv_idx = []
+    idx_col_OD_feature = vec_csv_col[-2]
+    idx_col_OS_feature = vec_csv_col[-1]
 
     # Loop through all the patients
     for i in range(len(vec_full_idx)):
@@ -563,8 +729,10 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
 
                 if str_eye[j] == 'OD':
                     y_curr = vec_OD_feature[rel_idx_patient_id]
+                    vec_out_csv_idx.append([rel_idx_patient_id, idx_col_OD_feature])
                 elif str_eye[j] == 'OS':
                     y_curr = vec_OS_feature[rel_idx_patient_id]
+                    vec_out_csv_idx.append([rel_idx_patient_id, idx_col_OS_feature])
                 else:
                     raise Exception('Invalid eye label encountered')
 
@@ -585,8 +753,10 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
 
             if str_eye == 'OD':
                 y_curr = vec_OD_feature[rel_idx_patient_id]
+                vec_out_csv_idx.append([rel_idx_patient_id, idx_col_OD_feature])
             elif str_eye == 'OS':
                 y_curr = vec_OS_feature[rel_idx_patient_id]
+                vec_out_csv_idx.append([rel_idx_patient_id, idx_col_OS_feature])
             else:
                 raise Exception('Invalid eye label encountered')
 
@@ -601,8 +771,9 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
     x_bscan3d = np.stack(x_bscan3d, axis=0)
 
     y = np.stack(y, axis=0)
+    vec_out_csv_idx = vec_out_csv_idx
 
-    return [x_angiography, x_structure, x_bscan, x_bscan3d], y, vec_str_patient
+    return [x_angiography, x_structure, x_bscan, x_bscan3d], y, vec_str_patient, vec_out_csv_idx
 
 
 def load_specific_label_folder(vec_idx_class, str_class, label_class, cfg):
