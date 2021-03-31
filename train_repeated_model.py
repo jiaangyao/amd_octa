@@ -22,14 +22,15 @@ cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
 # if folder, then loading based on existing folder structure
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
+cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa')
 cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
-cfg.f_csv = 'BookMod.csv'
+cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
 # otherwise it has to match what's in the CSV file column header
-# cfg.str_feature = 'disease'
 cfg.str_feature = 'disease'
+# cfg.str_feature = 'Scar'
 cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
 cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
 # cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']

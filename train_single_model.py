@@ -89,16 +89,19 @@ Xs, ys = preprocess(vec_idx_patient, cfg)
 print("\nx_train Angiography cube shape: {}".format(Xs[0][0].shape))
 print("x_train Structure OCT cube shape: {}".format(Xs[0][1].shape))
 print("x_train B scan shape: {}".format(Xs[0][2].shape))
+print("x_train 3D B scan shape: {}".format(Xs[0][3].shape))
 print("y_train onehot shape: {}".format(ys[0].shape))
 
 print("\nx_valid Angiography cube shape: {}".format(Xs[1][0].shape))
 print("x_valid Structure OCT cube shape: {}".format(Xs[1][1].shape))
 print("x_valid B scan shape: {}".format(Xs[1][2].shape))
+print("x_valid 3D B scan shape: {}".format(Xs[1][3].shape))
 print("y_valid onehot shape: {}".format(ys[1].shape))
 
 print("\nx_test Angiography cube shape: {}".format(Xs[2][0].shape))
 print("x_test Structure OCT cube shape: {}".format(Xs[2][1].shape))
 print("x_test B scan shape: {}".format(Xs[2][2].shape))
+print("x_test 3D B scan shape: {}".format(Xs[2][3].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model

@@ -12,7 +12,7 @@ from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix
 # Configuring the files here for now
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
 # cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/orig/')
-cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/patient_id/')
+cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/FinalData/')
 cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
 
 # specify the loading mode: 'csv' vs 'folder'
@@ -21,7 +21,7 @@ cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
 cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa/')
-cfg.f_csv = 'BookMod.csv'
+cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
@@ -46,11 +46,17 @@ cfg.str_structure = 'Structure'
 cfg.str_bscan = 'B-Scan'
 
 cfg.vec_str_layer = ['Deep', 'Avascular', 'ORCC', 'Choriocapillaris', 'Choroid']
+cfg.vec_str_layer_bscan3d = ['1', '2', '3', '4', '5']
 cfg.dict_layer_order = {'Deep': 0,
                         'Avascular': 1,
                         'ORCC': 2,
                         'Choriocapillaris': 3,
                         'Choroid': 4}
+cfg.dict_layer_order_bscan3d = {'1': 0,
+                                '2': 1,
+                                '3': 2,
+                                '4': 3,
+                                '5': 4}
 cfg.str_bscan_layer = 'Flow'
 
 cfg.cv_mode = True
@@ -76,7 +82,7 @@ cfg.random_seed = 68
 cfg.use_random_seed = True
 cfg.binary_class = False
 
-vec_idx_patient = [1, 250]
+vec_idx_patient = [1, 240]
 
 # Preprocessing
 vec_Xs, vec_ys = preprocess_cv(vec_idx_patient, cfg)
@@ -94,16 +100,19 @@ for idx_fold in range(len(vec_Xs)):
     print("\nx_train Angiography cube shape: {}".format(Xs[0][0].shape))
     print("x_train Structure OCT cube shape: {}".format(Xs[0][1].shape))
     print("x_train B scan shape: {}".format(Xs[0][2].shape))
+    print("x_train 3D B scan shape: {}".format(Xs[0][3].shape))
     print("y_train onehot shape: {}".format(ys[0].shape))
 
     print("\nx_valid Angiography cube shape: {}".format(Xs[1][0].shape))
     print("x_valid Structure OCT cube shape: {}".format(Xs[1][1].shape))
     print("x_valid B scan shape: {}".format(Xs[1][2].shape))
+    print("x_valid 3D B scan shape: {}".format(Xs[1][3].shape))
     print("y_valid onehot shape: {}".format(ys[1].shape))
 
     print("\nx_test Angiography cube shape: {}".format(Xs[2][0].shape))
     print("x_test Structure OCT cube shape: {}".format(Xs[2][1].shape))
     print("x_test B scan shape: {}".format(Xs[2][2].shape))
+    print("x_test 3D B scan shape: {}".format(Xs[2][3].shape))
     print("y_test onehot shape: {}".format(ys[2].shape))
 
     # Get and train model
