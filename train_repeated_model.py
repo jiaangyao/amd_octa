@@ -29,11 +29,13 @@ cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
 # otherwise it has to match what's in the CSV file column header
-cfg.str_feature = 'disease'
-# cfg.str_feature = 'Scar'
 cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
-cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
-# cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
+
+cfg.str_feature = 'disease'
+cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
+
+# cfg.str_feature = 'Scar'
+# cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
 
 cfg.str_healthy = 'Normal'
 cfg.label_healthy = 0
@@ -61,6 +63,7 @@ cfg.dict_layer_order_bscan3d = {'1': 0,
                                 '4': 3,
                                 '5': 4}
 cfg.str_bscan_layer = 'Flow'
+cfg.dict_str_patient_label = {}
 
 cfg.downscale_size = [256, 256]
 cfg.per_train = 0.6
@@ -76,6 +79,7 @@ cfg.lam = 1e-5
 cfg.overwrite = True
 
 cfg.balanced = False
+cfg.cv_mode = False
 cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.decimate = False
@@ -100,6 +104,9 @@ vec_model = []
 
 np.random.seed(cfg.random_seed)
 
+
+if cfg.str_feature != 'disease':
+    raise Exception('You should run the feature training in CV mode')
 
 for i in range(cfg.n_repeats):
     print("\n\nIteration: {}".format(i + 1))
@@ -144,6 +151,7 @@ for i in range(cfg.n_repeats):
         y_pred = model.predict(Xs[2])
         y_pred[y_pred >= 0.5] = 1
         y_pred[y_pred < 0.5] = 0
+        y_pred = y_pred.reshape(-1)
     else:
         y_true = np.argmax(ys[-1], axis=1)
         y_pred = np.argmax(model.predict(Xs[2]), axis=1)
@@ -167,5 +175,3 @@ cfg.p_figure.mkdir(exist_ok=True, parents=True)
 
 plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=cfg.str_model)
 plot_norm_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=cfg.str_model)
-
-print('nothing')

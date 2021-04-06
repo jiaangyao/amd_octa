@@ -6,6 +6,7 @@ from config.load_config import get_config
 from preprocess import preprocess_cv
 from model import get_model, get_callbacks
 from utils.io_funcs import *
+from utils.get_patient_id import get_patient_id_by_label
 from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix, plot_norm_conf_matrix
 
 
@@ -26,11 +27,13 @@ cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
 # otherwise it has to match what's in the CSV file column header
-# cfg.str_feature = 'disease'
-cfg.str_feature = 'Large PED'
-cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'Large PED']
-cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
-# cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
+cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
+
+cfg.str_feature = 'disease'
+cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
+
+# cfg.str_feature = 'Scar'
+# cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
 
 cfg.str_healthy = 'Normal'
 cfg.label_healthy = 0
@@ -58,6 +61,7 @@ cfg.dict_layer_order_bscan3d = {'1': 0,
                                 '4': 3,
                                 '5': 4}
 cfg.str_bscan_layer = 'Flow'
+cfg.dict_str_patient_label = {}
 
 cfg.cv_mode = True
 cfg.num_cv_fold = 5
@@ -82,7 +86,7 @@ cfg.random_seed = 68
 cfg.use_random_seed = True
 cfg.binary_class = False
 
-vec_idx_patient = [1, 240]
+vec_idx_patient = [1, 310]
 
 # Preprocessing
 vec_Xs, vec_ys = preprocess_cv(vec_idx_patient, cfg)
@@ -179,6 +183,23 @@ y_pred_all = y_pred_unsorted_all[idx_permutation_sort]
 
 cfg.y_test_true = y_true_all
 cfg.y_test_pred = y_pred_all
+
+print("\nOverall accuracy: {}".format(np.sum(y_true_all == y_pred_all)/len(y_true_all)))
+
+# Print out the patient IDs corresponding to the query
+# Here for example
+# if you are running 'disease' label and you set true_label_id = 0 and predicted_label_id = 2
+# then you would get the patients who are normal/healthy and but falsely classified as NV AMD
+# the true_label_id and predicted_label_id correspond to cfg.vec_str_labels defined above
+# print(get_patient_id_by_label(y_true_all, y_pred_all, true_label_id=0, predicted_label_id=2, cfg=cfg))
+
+# you can also print multiple of these at the same time
+# print(get_patient_id_by_label(y_true_all, y_pred_all, true_label_id=2, predicted_label_id=1, cfg=cfg))
+
+# Extra caveat: for feature labels since we don't have possible any more and since the classes
+# are automatically recasted to get the FN (patient has the feature but network predicts not present)
+# you need to do something like
+print(get_patient_id_by_label(y_true_all, y_pred_all, true_label_id=1, predicted_label_id=0, cfg=cfg))
 
 # Plot and save the final result
 plot_raw_conf_matrix(y_true_all, y_pred_all, cfg, save=True, cv_all=True)

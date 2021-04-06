@@ -6,6 +6,7 @@ from config.load_config import get_config
 from preprocess import preprocess
 from model import get_model, get_callbacks
 from utils.io_funcs import *
+from utils.get_patient_id import get_patient_id_by_label
 from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix, plot_norm_conf_matrix
 
 
@@ -13,7 +14,7 @@ from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
 cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/FinalData/')
 cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
-# cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
+# cfg.d_data = pathlib.Path('/home/kavi/Downloads/Data/')
 # cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
 
 # specify the loading mode: 'csv' vs 'folder'
@@ -28,11 +29,13 @@ cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 # name of particular feature that will be used
 # note if want to test for disease label then have to specify this to be disease
 # otherwise it has to match what's in the CSV file column header
-cfg.str_feature = 'disease'
-# cfg.str_feature = 'Scar'
 cfg.vec_all_str_feature = ['disease', 'IRF/SRF', 'Scar', 'GA', 'CNV', 'PED']
-cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
-# cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
+
+cfg.str_feature = 'disease'
+cfg.vec_str_labels = ['Normal', 'NNV AMD', 'NV AMD']
+
+# cfg.str_feature = 'IRF/SRF'
+# cfg.vec_str_labels = ['Not Present', 'Possible', 'Present']
 
 cfg.str_healthy = 'Normal'
 cfg.label_healthy = 0
@@ -60,6 +63,7 @@ cfg.dict_layer_order_bscan3d = {'1': 0,
                                 '4': 3,
                                 '5': 4}
 cfg.str_bscan_layer = 'Flow'
+cfg.dict_str_patient_label = {}
 
 cfg.downscale_size = [256, 256]
 cfg.per_train = 0.6
@@ -75,6 +79,7 @@ cfg.lam = 1e-5
 cfg.overwrite = True
 
 cfg.balanced = False
+cfg.cv_mode = False
 cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.random_seed = 68
@@ -135,6 +140,7 @@ if cfg.num_classes == 2:
     y_pred = model.predict(Xs[2])
     y_pred[y_pred >= 0.5] = 1
     y_pred[y_pred < 0.5] = 0
+    y_pred = y_pred.reshape(-1)
 else:
     y_true = np.argmax(ys[-1], axis=1)
     y_pred = np.argmax(model.predict(Xs[2]), axis=1)
@@ -142,11 +148,26 @@ else:
 # Printing out true and pred labels for log reg
 print('Test set: ground truth')
 
-print(np.argmax(ys[2], 1))  # y_true?
+print(y_true)
 
 print('Test set: prediction')
 
 print(y_pred)
+
+# Print out the patient IDs corresponding to the query
+# Here for example
+# if you are running 'disease' label and you set true_label_id = 0 and predicted_label_id = 2
+# then you would get the patients who are normal/healthy and but falsely classified as NV AMD
+# the true_label_id and predicted_label_id correspond to cfg.vec_str_labels defined above
+print(get_patient_id_by_label(y_true, y_pred, true_label_id=0, predicted_label_id=2, cfg=cfg))
+
+# you can also print multiple of these at the same time
+print(get_patient_id_by_label(y_true, y_pred, true_label_id=2, predicted_label_id=1, cfg=cfg))
+
+# Extra caveat: for feature labels since we don't have possible any more and since the classes
+# are automatically recasted to get the FN (patient has the feature but network predicts not present)
+# you need to do something like
+# print(get_patient_id_by_label(y_true, y_pred, true_label_id=1, predicted_label_id=0, cfg=cfg))
 
 cfg.y_test_true = y_true
 cfg.y_test_pred = y_pred

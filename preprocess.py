@@ -120,15 +120,15 @@ def preprocess_cv(vec_idx_patient, cfg):
         raise Exception("Percentage of train, validation and test sets should add to 1")
 
     # load all data
-    [x_angiography, x_structure, x_bscan], y = data_loading(vec_idx_patient, cfg)
+    [x_angiography, x_structure, x_bscan, x_bscan3d], y = data_loading(vec_idx_patient, cfg)
 
     # split the data into training, validation and test set
     if not cfg.balanced:
         if cfg.use_random_seed:
             with temp_seed(cfg.random_seed):
-                vec_Xs, vec_ys = _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg)
+                vec_Xs, vec_ys = _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, x_bscan3d, y, cfg)
         else:
-            vec_Xs, vec_ys = _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg)
+            vec_Xs, vec_ys = _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, x_bscan3d, y, cfg)
 
         # Don't need to do oversample anymore in the future
         if cfg.oversample:
@@ -143,6 +143,7 @@ def preprocess_cv(vec_idx_patient, cfg):
 
 
 def _split_data_unbalanced(x_angiography, x_structure, x_bscan, x_bscan3d, y, cfg):
+    n_iter = 0
     while True:
         idx_permutation = np.random.permutation(x_angiography.shape[0])
         x_angiography_curr = x_angiography[idx_permutation, :, :, :, :]
@@ -175,6 +176,11 @@ def _split_data_unbalanced(x_angiography, x_structure, x_bscan, x_bscan3d, y, cf
                 len(np.unique(y_test)) == cfg.num_classes:
             break
 
+        # else count how many times have we tried and break if failed attempt
+        n_iter += 1
+        if n_iter > 200:
+            raise Exception("No valid splitting possible, check dataset and configuration")
+
     # convert the labels to onehot encoding if multi-class
     if not cfg.binary_class:
         y_train = to_categorical(y_train, num_classes=cfg.num_classes)
@@ -197,7 +203,7 @@ def _split_data_unbalanced(x_angiography, x_structure, x_bscan, x_bscan3d, y, cf
     return Xs, ys
 
 
-def _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg):
+def _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, x_bscan3d, y, cfg):
     """
     Unbalanced splitting of training, validation and test sets for cross validation mode
 
@@ -239,6 +245,7 @@ def _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg):
             x_angiography_test_curr = x_angiography[idx_test_curr, ...]
             x_structure_test_curr = x_structure[idx_test_curr, ...]
             x_bscan_test_curr = x_bscan[idx_test_curr, ...]
+            x_bscan3d_test_curr = x_bscan3d[idx_test_curr, ...]
             y_test_curr = y[idx_test_curr]
 
             # obtain the indices for training and validation
@@ -253,11 +260,13 @@ def _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg):
             x_angiography_train_curr = x_angiography[idx_train_curr, ...]
             x_structure_train_curr = x_structure[idx_train_curr, ...]
             x_bscan_train_curr = x_bscan[idx_train_curr, ...]
+            x_bscan3d_train_curr = x_bscan3d[idx_train_curr, ...]
             y_train_curr = y[idx_train_curr]
 
             x_angiography_valid_curr = x_angiography[idx_valid_curr, ...]
             x_structure_valid_curr = x_structure[idx_valid_curr, ...]
             x_bscan_valid_curr = x_bscan[idx_valid_curr, ...]
+            x_bscan3d_valid_curr = x_bscan3d[idx_valid_curr, ...]
             y_valid_curr = y[idx_valid_curr]
 
             # test if all classes are present in all three sets
@@ -268,9 +277,9 @@ def _split_data_unbalanced_cv(x_angiography, x_structure, x_bscan, y, cfg):
                 skip_to_next_loop = True
                 break
 
-            x_train_curr = [x_angiography_train_curr, x_structure_train_curr, x_bscan_train_curr]
-            x_valid_curr = [x_angiography_valid_curr, x_structure_valid_curr, x_bscan_valid_curr]
-            x_test_curr = [x_angiography_test_curr, x_structure_test_curr, x_bscan_test_curr]
+            x_train_curr = [x_angiography_train_curr, x_structure_train_curr, x_bscan_train_curr, x_bscan3d_train_curr]
+            x_valid_curr = [x_angiography_valid_curr, x_structure_valid_curr, x_bscan_valid_curr, x_bscan3d_valid_curr]
+            x_test_curr = [x_angiography_test_curr, x_structure_test_curr, x_bscan_test_curr, x_bscan3d_test_curr]
 
             if not cfg.binary_class:
                 y_train_curr = to_categorical(y_train_curr, num_classes=cfg.num_classes)
@@ -389,6 +398,7 @@ def _split_data(x_angiography, x_structure, x_bscan, x_bscan3d, y, cfg):
 
     # Now generate the validation and test sets
     # TODO: right now just concatenate everything left and then split... might be a better way out there
+    n_iter = 0
     while True:
         vec_idx_class0_valid_test = vec_idx_class0[cfg.train_split[0]:]
         vec_idx_class1_valid_test = vec_idx_class1[cfg.train_split[1]:]
@@ -419,6 +429,11 @@ def _split_data(x_angiography, x_structure, x_bscan, x_bscan3d, y, cfg):
         # if there are all three labels in both sets we are done
         if len(np.unique(y_valid)) == cfg.num_classes and len(np.unique(y_test)) == cfg.num_classes:
             break
+
+        # else count how many times have we tried and break if failed attempt
+        n_iter += 1
+        if n_iter > 200:
+            raise Exception("No valid splitting possible, check dataset and configuration")
 
     x_angiography_valid = x_angiography[vec_idx_absolute_valid, :, :, :, :]
     x_structure_valid = x_structure[vec_idx_absolute_valid, :, :, :, :]
@@ -718,15 +733,6 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
         # now unpack the data
         if len(packed_x_curr) == 2:
             for j in range(len(packed_x_curr)):
-                x_angiography.append(packed_x_curr[j][0])
-                x_structure.append(packed_x_curr[j][1])
-                x_bscan.append(packed_x_curr[j][2])
-                x_bscan3d.append(packed_x_curr[j][3])
-
-                # append to list of patients
-                str_patient = "Patient {}/{}".format(vec_full_idx[i], str_eye[j])
-                vec_str_patient.append(str_patient)
-
                 if str_eye[j] == 'OD':
                     y_curr = vec_OD_feature[rel_idx_patient_id]
                     vec_out_csv_idx.append([rel_idx_patient_id, idx_col_OD_feature])
@@ -739,18 +745,18 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
                 if np.isnan(y_curr):
                     raise Exception("Label shouldn't be NaN")
 
+                x_angiography.append(packed_x_curr[j][0])
+                x_structure.append(packed_x_curr[j][1])
+                x_bscan.append(packed_x_curr[j][2])
+                x_bscan3d.append(packed_x_curr[j][3])
+
                 y.append(int(y_curr))
 
+                # append to list of patients
+                str_patient = "Patient {}/{}".format(vec_full_idx[i], str_eye[j])
+                vec_str_patient.append(str_patient)
+
         else:
-            x_angiography.append(packed_x_curr[0])
-            x_structure.append(packed_x_curr[1])
-            x_bscan.append(packed_x_curr[2])
-            x_bscan3d.append(packed_x_curr[3])
-
-            # append to list of patients
-            str_patient = "Patient {}/{}".format(vec_full_idx[i], str_eye)
-            vec_str_patient.append(str_patient)
-
             if str_eye == 'OD':
                 y_curr = vec_OD_feature[rel_idx_patient_id]
                 vec_out_csv_idx.append([rel_idx_patient_id, idx_col_OD_feature])
@@ -763,7 +769,16 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
             if np.isnan(y_curr):
                 raise Exception("Label shouldn't be NaN")
 
+            x_angiography.append(packed_x_curr[0])
+            x_structure.append(packed_x_curr[1])
+            x_bscan.append(packed_x_curr[2])
+            x_bscan3d.append(packed_x_curr[3])
+
             y.append(int(y_curr))
+
+            # append to list of patients
+            str_patient = "Patient {}/{}".format(vec_full_idx[i], str_eye)
+            vec_str_patient.append(str_patient)
 
     x_angiography = np.stack(x_angiography, axis=0)
     x_structure = np.stack(x_structure, axis=0)
