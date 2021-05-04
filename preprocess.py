@@ -34,7 +34,6 @@ def preprocess(vec_idx_patient, cfg):
 
         if cfg.oversample:
             if cfg.oversample_method == 'smote':
-
                 x_train = Xs[0]
                 x_angiography_train = x_train[0]
                 x_structure_train = x_train[1]
@@ -71,7 +70,6 @@ def preprocess(vec_idx_patient, cfg):
                 x_bscan = x_bscan_train_rs.reshape(bscan_shape)
                 x_bscan3d = x_bscan3d_train_rs.reshape(bscan3d_shape)
 
-
                 if not (np.allclose(y_train_rs, y_train_rs_alt) and np.allclose(y_train_rs, y_train_rs_alt_alt)):
                     raise Exception("Issues with SMOTE")
 
@@ -80,6 +78,8 @@ def preprocess(vec_idx_patient, cfg):
 
                 Xs = [x_train, Xs[1], Xs[2]]
                 ys = [y_train, ys[1], ys[2]]
+
+                raise Exception("Not fully implemented")
 
             elif cfg.oversample_method == 'random':
                 raise NotImplementedError
@@ -638,8 +638,8 @@ def load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featur
     """
 
     x, y, vec_str_patients, vec_out_csv_idx = _load_all_data_csv(vec_idx, vec_str_patient_id, 
-                                                                 vec_OD_feature, vec_OS_feature,
-                                                                 cfg.d_data, cfg.downscale_size, cfg.num_octa, 
+                                                                 vec_OD_feature, vec_OS_feature, cfg.d_data,
+                                                                 cfg.downscale_size, cfg.crop_size, cfg.num_octa,
                                                                  cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
                                                                  cfg.vec_str_layer, cfg.vec_str_layer_bscan3d, 
                                                                  cfg.str_bscan_layer, cfg.dict_layer_order, 
@@ -650,7 +650,7 @@ def load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featur
 
 
 def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_feature,
-                       d_data, downscale_size, num_octa, str_angiography, str_structure,
+                       d_data, downscale_size, crop_size, num_octa, str_angiography, str_structure,
                        str_bscan, vec_str_layer, vec_str_layer_bscan3d,
                        str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d, vec_csv_col):
 
@@ -663,6 +663,7 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
     :param vec_OS_feature:
     :param pathlib.Path d_data: directory to the data
     :param list downscale_size: desired shape after downscaling the images, e.g. [350, 350]
+    :param list crop_size: desired number of pixels to exclude from analysis for bscan images, e.g. [50, 60]
     :param num_octa: number of OCTA images per patient, e.g. 5
     :param str_angiography: identifier for structural angiography images in the filename
     :param str_structure: identifier for structural OCT images in the filename
@@ -718,7 +719,7 @@ def _load_all_data_csv(vec_idx, vec_str_patient_id, vec_OD_feature, vec_OS_featu
             print("Data (bscan3d) not available for patient {}, skipping...".format(vec_full_idx[i]))
             continue
 
-        packed_x_curr, str_eye = _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa,
+        packed_x_curr, str_eye = _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, crop_size, num_octa,
                                                str_angiography, str_structure, str_bscan,
                                                vec_str_layer, vec_str_layer_bscan3d, str_bscan_layer,
                                                dict_layer_order, dict_layer_order_bscan3d)
@@ -802,7 +803,7 @@ def load_specific_label_folder(vec_idx_class, str_class, label_class, cfg):
     :return:
     """
     x_class, y_class, vec_str_class = _load_data_folder(vec_idx_class, str_class, label_class,
-                                                        cfg.d_data, cfg.downscale_size, cfg.num_octa,
+                                                        cfg.d_data, cfg.downscale_size, cfg.crop_size, cfg.num_octa,
                                                         cfg.str_angiography, cfg.str_structure, cfg.str_bscan,
                                                         cfg.vec_str_layer, cfg.vec_str_layer_bscan3d, cfg.str_bscan_layer,
                                                         cfg.dict_layer_order, cfg.dict_layer_order_bscan3d)
@@ -810,7 +811,7 @@ def load_specific_label_folder(vec_idx_class, str_class, label_class, cfg):
     return x_class, y_class, vec_str_class
 
 
-def _load_data_folder(vec_idx, str_class, label_class, d_data, downscale_size, num_octa,
+def _load_data_folder(vec_idx, str_class, label_class, d_data, downscale_size, crop_size, num_octa,
                       str_angiography, str_structure, str_bscan, vec_str_layer, vec_str_layer_bscan3d,
                       str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d):
     """
@@ -821,6 +822,7 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, downscale_size, n
     :param label_class: label assigned to this class, e.g. 0
     :param pathlib.Path d_data: directory to the data
     :param list downscale_size: desired shape after downscaling the images, e.g. [350, 350]
+    :param list crop_size: desired number of pixels to exclude from analysis for bscan images, e.g. [50, 60]
     :param num_octa: number of OCTA images per patient, e.g. 5
     :param str_angiography: identifier for structural angiography images in the filename
     :param str_structure: identifier for structural OCT images in the filename
@@ -874,7 +876,7 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, downscale_size, n
             print("Data (bscan3d) not available for patient {}, skipping...".format(vec_full_idx[i]))
             continue
 
-        packed_x_curr, str_eye = _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa,
+        packed_x_curr, str_eye = _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, crop_size, num_octa,
                                                str_angiography, str_structure, str_bscan,
                                                vec_str_layer, vec_str_layer_bscan3d, str_bscan_layer,
                                                dict_layer_order, dict_layer_order_bscan3d)
@@ -918,8 +920,9 @@ def _load_data_folder(vec_idx, str_class, label_class, d_data, downscale_size, n
     return [x_angiography, x_structure, x_bscan, x_bscan3d], y, vec_str_patient
 
 
-def _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa, str_angiography, str_structure, str_bscan,
-                  vec_str_layer, vec_str_layer_bscan3d, str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d):
+def _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, crop_size, num_octa,
+                  str_angiography, str_structure, str_bscan, vec_str_layer, vec_str_layer_bscan3d, str_bscan_layer,
+                  dict_layer_order, dict_layer_order_bscan3d):
     """
     Organizes the angiography, OCT and b-scan images into a list of cubes for a single subject and also returns which
     eye it is. Difference from function below: contains logic that deal with cases where there are two eyes
@@ -927,6 +930,7 @@ def _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa, str
     :param vec_f_image: list of absolute paths to individual images from a single subject
     :param vec_f_imageBscan3d: list of absolute paths to individual bscan images from a single subject
     :param downscale_size: desired final size of the loaded images, e.g. (256, 256)
+    :param crop_size: desired number of pixels to exclude from analysis for bscan images, e.g. [50, 60]
     :param num_octa: number of OCTA images per patient, e.g. 5
     :param str_angiography: identifier for angiography images in the filename
     :param str_structure: identifier for structural OCT images in the filename
@@ -951,11 +955,11 @@ def _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa, str
         vec_f_imageBscan3d_OD = [s for s in vec_f_imageBscan3d if "/OD/" in s]
         vec_f_imageBscan3d_OS = [s for s in vec_f_imageBscan3d if "/OS/" in s]
 
-        x_curr_OD = _form_cubes(vec_f_image_OD, vec_f_imageBscan3d_OD, num_octa, downscale_size,
+        x_curr_OD = _form_cubes(vec_f_image_OD, vec_f_imageBscan3d_OD, num_octa, downscale_size, crop_size,
                                 str_angiography, str_structure, str_bscan, vec_str_layer, vec_str_layer_bscan3d,
                                 str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d)
 
-        x_curr_OS = _form_cubes(vec_f_image_OS, vec_f_imageBscan3d_OS, num_octa, downscale_size,
+        x_curr_OS = _form_cubes(vec_f_image_OS, vec_f_imageBscan3d_OS, num_octa, downscale_size, crop_size,
                                 str_angiography, str_structure, str_bscan, vec_str_layer, vec_str_layer_bscan3d,
                                 str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d)
 
@@ -977,7 +981,7 @@ def _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa, str
             str_eye = None
 
     else:
-        x_curr = _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size,
+        x_curr = _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, crop_size,
                              str_angiography, str_structure, str_bscan, vec_str_layer, vec_str_layer_bscan3d,
                              str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d)
 
@@ -995,8 +999,9 @@ def _package_data(vec_f_image, vec_f_imageBscan3d, downscale_size, num_octa, str
     return packed_x_curr, str_eye
 
 
-def _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, str_angiography, str_structure, str_bscan,
-                vec_str_layer, vec_str_layer_bscan3d, str_bscan_layer, dict_layer_order, dict_layer_order_bscan3d):
+def _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, crop_size,
+                str_angiography, str_structure, str_bscan, vec_str_layer, vec_str_layer_bscan3d, str_bscan_layer,
+                dict_layer_order, dict_layer_order_bscan3d):
     """
     Organizes the angiography, OCT and b-scan images into a list of cubes for a single subject
 
@@ -1004,6 +1009,7 @@ def _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, str_a
     :param vec_f_imageBscan3d: list of absolute paths to individual bscan images from a single subject
     :param num_octa: number of OCTA images per patient, e.g. 5
     :param downscale_size: desired final size of the loaded images, e.g. (256, 256)
+    :param crop_size: desired number of pixels to exclude from analysis for bscan images, e.g. [50, 60]
     :param str_angiography: identifier for angiography images in the filename
     :param str_structure: identifier for structural OCT images in the filename
     :param str_bscan: identifier for b-scan OCT images in the filename
@@ -1115,19 +1121,27 @@ def _form_cubes(vec_f_image, vec_f_imageBscan3d, num_octa, downscale_size, str_a
     vol_angiography_curr = np.zeros([downscale_size[0], downscale_size[1], num_octa, 1])
     vol_structure_curr = np.zeros([downscale_size[0], downscale_size[1], num_octa, 1])
     vol_bscan_curr = np.zeros([downscale_size[0], downscale_size[1], 1])
-    vol_bscan3d_curr = np.zeros([downscale_size[0], downscale_size[1], num_octa, 1])
+
 
     _create_np_cubes(vol_angiography_curr, vec_vol_f_image_angiography_curr, downscale_size)
     _create_np_cubes(vol_structure_curr, vec_vol_f_image_structure_curr, downscale_size)
     _create_np_cubes(vol_bscan_curr, vec_vol_f_image_bscan_curr, downscale_size)
-    _create_np_cubes(vol_bscan3d_curr, vec_vol_f_image_bscan3d_curr, downscale_size)
+
+    if crop_size is None:
+        vol_bscan3d_curr = np.zeros([downscale_size[0], downscale_size[1], num_octa, 1])
+        _create_np_cubes(vol_bscan3d_curr, vec_vol_f_image_bscan3d_curr, downscale_size)
+
+    else:
+        vol_bscan3d_curr = np.zeros([downscale_size[0] - crop_size[0] - crop_size[1], downscale_size[1], num_octa, 1])
+        _create_np_cubes(vol_bscan3d_curr, vec_vol_f_image_bscan3d_curr, downscale_size,
+                         bool_crop=True, crop_size=crop_size)
 
     x_curr = [vol_angiography_curr, vol_structure_curr, vol_bscan_curr, vol_bscan3d_curr]
 
     return x_curr
 
 
-def _create_np_cubes(np_cube, vec_vol_f_image, downscale_size):
+def _create_np_cubes(np_cube, vec_vol_f_image, downscale_size, bool_crop=False, crop_size=None):
     """
     Packs loaded single-type (e.g. OCT) individual images into numpy tensors of shape (width, height, n_octa, 1).
     This would correspond to data from a single patient
@@ -1138,15 +1152,15 @@ def _create_np_cubes(np_cube, vec_vol_f_image, downscale_size):
     """
     if len(np_cube.shape) == 4:
         for idx_layer, p_f_image_curr_layer in vec_vol_f_image.items():
-            curr_img = _load_individual_image(str(p_f_image_curr_layer), downscale_size)
+            curr_img = _load_individual_image(str(p_f_image_curr_layer), downscale_size, bool_crop, crop_size)
             np_cube[:, :, idx_layer, :] = curr_img
 
     # TODO: code for B scan is ugly
     else:
-        np_cube[:, :] = _load_individual_image(str(vec_vol_f_image[0]), downscale_size)
+        np_cube[:, :] = _load_individual_image(str(vec_vol_f_image[0]), downscale_size, bool_crop, crop_size)
 
 
-def _load_individual_image(f_image, downscale_size):
+def _load_individual_image(f_image, downscale_size, bool_crop=False, crop_size=None):
     """
     Loads an individual image into numpy array and perform resizing
 
@@ -1174,5 +1188,11 @@ def _load_individual_image(f_image, downscale_size):
 
     # Note here you can't use numpy resize since the end result obtained is different from original image
     imgResized = transform.resize(img, (downscale_size[0], downscale_size[1], 1), anti_aliasing=True)
+
+    # if we want to crop the image
+    if bool_crop:
+        imgResized_orig = imgResized.copy()
+        crop_end = downscale_size[1] - crop_size[1]
+        imgResized = imgResized[crop_size[0]:crop_end, :, :]
 
     return imgResized

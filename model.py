@@ -1179,7 +1179,13 @@ def get_model(str_model, cfg):
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
-        bscan3d_inputs = Input(shape=cfg.sample_size[0])
+
+        if cfg.crop_size is None:
+            bscan3d_inputs = Input(shape=cfg.sample_size[0])
+        else:
+            sample_size_cropped = list(cfg.sample_size[0])
+            sample_size_cropped[0] = sample_size_cropped[0] - cfg.crop_size[0] - cfg.crop_size[1]
+            bscan3d_inputs = Input(shape=tuple(sample_size_cropped))
 
         # angiography pathway
         x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
@@ -1209,26 +1215,49 @@ def get_model(str_model, cfg):
         x_angio = Flatten()(x)
 
         # bscan3d pathway
-        x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
-        x = LeakyReLU()(x)
-        x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)
-        x = Dropout(0.05)(x)
+        if cfg.crop_size is None:
+            x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
+            x = LeakyReLU()(x)
+            x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)
+            x = Dropout(0.05)(x)
 
-        x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
-        x = LeakyReLU(0.03)(x)
-        x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
-        x = Dropout(0.2)(x)
+            x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+            x = Dropout(0.2)(x)
 
-        x = Conv3D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
-        x = LeakyReLU(0.03)(x)
-        x = MaxPooling3D(pool_size=(2, 2, 1))(x)
-        x = Dropout(0.2)(x)
+            x = Conv3D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(2, 2, 1))(x)
+            x = Dropout(0.2)(x)
 
-        x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
-        x = LeakyReLU(0.03)(x)
-        x = MaxPooling3D(pool_size=(2, 2, 1))(x)
-        x = Dropout(0.2)(x)
-        x_bscan = Flatten()(x)
+            x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(2, 2, 1))(x)
+            x = Dropout(0.2)(x)
+            x_bscan = Flatten()(x)
+
+        else:
+            x = Conv3D(5, kernel_size=(20, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
+            x = LeakyReLU()(x)
+            x = MaxPooling3D(pool_size=(2, 4, 1), strides=(2, 2, 1))(x)
+            x = Dropout(0.05)(x)
+
+            x = Conv3D(8, kernel_size=(10, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(1, 2, 1), strides=(2, 2, 1))(x)
+            x = Dropout(0.2)(x)
+
+            x = Conv3D(10, kernel_size=(10, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(1, 2, 1))(x)
+            x = Dropout(0.2)(x)
+
+            x = Conv3D(20, kernel_size=(3, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(1, 2, 1))(x)
+            x = Dropout(0.2)(x)
+            x_bscan = Flatten()(x)
 
         x = Concatenate()([x_angio, x_bscan])
         # Dense layer
