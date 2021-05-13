@@ -67,8 +67,9 @@ cfg.cv_mode = True
 cfg.num_cv_fold = 5
 
 cfg.downscale_size = [256, 256]
-cfg.crop_size = [int(np.round(cfg.downscale_size[1] * 1.5/7.32)),
-                 int(np.round(cfg.downscale_size[1] * 1.8/7.32))]
+cfg.downscale_size_bscan = [450, 300]
+cfg.crop_size = [int(np.round(cfg.downscale_size_bscan[0] * 1.5/7.32)),
+                 int(np.round(cfg.downscale_size_bscan[0] * 1.8/7.32))]
 # cfg.crop_size = None
 cfg.per_train = 0.6
 cfg.per_valid = 0.2

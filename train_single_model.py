@@ -66,8 +66,9 @@ cfg.str_bscan_layer = 'Flow'
 cfg.dict_str_patient_label = {}
 
 cfg.downscale_size = [256, 256]
-cfg.crop_size = [int(np.round(cfg.downscale_size[1] * 1.5/7.32)),
-                 int(np.round(cfg.downscale_size[1] * 1.8/7.32))]
+cfg.downscale_size_bscan = [450, 300]
+cfg.crop_size = [int(np.round(cfg.downscale_size_bscan[0] * 1.5/7.32)),
+                 int(np.round(cfg.downscale_size_bscan[0] * 1.8/7.32))]
 # cfg.crop_size = None
 cfg.per_train = 0.6
 cfg.per_valid = 0.2
@@ -89,7 +90,7 @@ cfg.random_seed = 68
 cfg.use_random_seed = True
 cfg.binary_class = False
 
-vec_idx_patient = [1, 200]
+vec_idx_patient = [1, 310]
 
 # Preprocessing
 Xs, ys = preprocess(vec_idx_patient, cfg)

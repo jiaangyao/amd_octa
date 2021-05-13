@@ -66,8 +66,9 @@ cfg.str_bscan_layer = 'Flow'
 cfg.dict_str_patient_label = {}
 
 cfg.downscale_size = [256, 256]
-cfg.crop_size = [int(np.round(cfg.downscale_size[1] * 1.5/7.32)),
-                 int(np.round(cfg.downscale_size[1] * 1.8/7.32))]
+cfg.downscale_size_bscan = [450, 300]
+cfg.crop_size = [int(np.round(cfg.downscale_size_bscan[0] * 1.5/7.32)),
+                 int(np.round(cfg.downscale_size_bscan[0] * 1.8/7.32))]
 # cfg.crop_size = None
 cfg.per_train = 0.6
 cfg.per_valid = 0.2
@@ -94,7 +95,7 @@ cfg.n_repeats = 10
 vec_idx_healthy = [1, 250]
 vec_idx_dry_amd = [1, 250]
 vec_idx_cnv = [1, 250]
-vec_idx_patient = [1, 250]
+vec_idx_patient = [1, 310]
 
 vec_train_acc = []
 vec_valid_acc = []
