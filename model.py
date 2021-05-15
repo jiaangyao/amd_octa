@@ -2029,7 +2029,7 @@ def get_model(str_model, cfg):
 
         return model
 
-    elif str_model == 'arch_023':
+    if str_model == 'arch_023':
         """
         architecture from Kavi
 
@@ -2107,6 +2107,121 @@ def get_model(str_model, cfg):
             str_loss = 'categorical_crossentropy'
 
         model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs], outputs=y)
+        model.summary()
+
+        model.compile(optimizer=RMSprop(lr=cfg.lr), loss=str_loss, metrics=['accuracy'])
+
+        return model
+
+    elif str_model == 'arch_023b':
+        """
+        architecture from Kavi
+
+        Test 1: 10 repeated runs
+            balanced sample
+            no SMOTE
+            number of parameters: 76k
+
+            new dataset: 10/24
+
+            Train, valid, test acc: [55.0+17.8, 45.1+12.9, 40.0+9.5] (avg + standard error)
+            
+        Test 2: 10 repeated runs
+            balanced sample
+            with SMOTE
+            number of parameters: 76k
+
+            new dataset: 10/24
+
+            Train, valid, test acc: [51.0+8.3, 38.6+8.3, 40.7+6.4] (avg + standard error)
+            
+        Test 3: 10 repeated runs
+            balanced sample
+            with SMOTE
+            number of parameters: 76k
+
+            new dataset: 10/24
+            Fixed random seed: 68
+
+            Train, valid, test acc: [50.9+18.0, 46.5+8.4, 42.8+10.3] (avg + standard error)
+
+        """
+
+        angiography_inputs = Input(shape=cfg.sample_size[0])
+        structure_inputs = Input(shape=cfg.sample_size[0])
+        bscan_inputs = Input(shape=cfg.sample_size[1])
+        if cfg.crop_size is None:
+            bscan3d_inputs = Input(shape=cfg.sample_size[0])
+        else:
+            sample_size_cropped = list(cfg.sample_size[0])
+            sample_size_cropped[0] = sample_size_cropped[0] - cfg.crop_size[0] - cfg.crop_size[1]
+            bscan3d_inputs = Input(shape=tuple(sample_size_cropped))
+
+        if cfg.crop_size is None:
+            x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
+            x = LeakyReLU()(x)
+            x = MaxPooling3D(pool_size=(4, 4, 1), strides=(2, 2, 1))(x)
+            x = Dropout(0.05)(x)
+
+            x = Conv3D(8, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(2, 2, 1), strides=(2, 2, 1))(x)
+            x = Dropout(0.2)(x)
+
+            x = Conv3D(10, kernel_size=(20, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(2, 2, 1))(x)
+            x = Dropout(0.2)(x)
+
+            x = Conv3D(20, kernel_size=(5, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(2, 2, 1))(x)
+            x = Dropout(0.2)(x)
+            x_bscan = Flatten()(x)
+
+        else:
+            x = Conv3D(5, kernel_size=(20, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
+            x = LeakyReLU()(x)
+            x = MaxPooling3D(pool_size=(2, 4, 1), strides=(2, 2, 1))(x)
+            x = Dropout(0.05)(x)
+
+            x = Conv3D(8, kernel_size=(10, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(1, 2, 1), strides=(2, 2, 1))(x)
+            x = Dropout(0.2)(x)
+
+            x = Conv3D(10, kernel_size=(10, 20, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(1, 2, 1))(x)
+            x = Dropout(0.2)(x)
+
+            x = Conv3D(20, kernel_size=(3, 5, 2), kernel_initializer='he_uniform', kernel_regularizer=l1(cfg.lam))(x)
+            x = LeakyReLU(0.03)(x)
+            x = MaxPooling3D(pool_size=(1, 2, 1))(x)
+            x = Dropout(0.2)(x)
+            #x_bscan = Flatten()(x)
+
+        #x = Concatenate()([x_angio, x_bscan])
+        # Dense layer
+        x = Flatten()(x)
+        x = Dropout(0.05)(x)
+
+        x = Dense(64, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+        # x = BatchNormalization()(x)
+        x = Dropout(0.3)(x)
+
+        x = Dense(16, kernel_initializer='he_uniform')(x)
+        x = LeakyReLU()(x)
+
+        if cfg.binary_class:
+            y = Dense(1, activation='sigmoid')(x)
+            str_loss = 'binary_crossentropy'
+        else:
+            y = Dense(cfg.num_classes, activation='softmax')(x)
+            str_loss = 'categorical_crossentropy'
+
+        model = Model(inputs=[angiography_inputs, structure_inputs, bscan_inputs, bscan3d_inputs], outputs=y)
         model.summary()
 
         model.compile(optimizer=RMSprop(lr=cfg.lr), loss=str_loss, metrics=['accuracy'])
