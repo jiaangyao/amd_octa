@@ -114,7 +114,7 @@ print("x_test 3D B scan shape: {}".format(Xs[2][3].shape))
 print("y_test onehot shape: {}".format(ys[2].shape))
 
 # Get and train model
-model = get_model('arch_022b', cfg)
+model = get_model('arch_023b', cfg)
 callbacks = get_callbacks(cfg)
 
 h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,

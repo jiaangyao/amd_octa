@@ -1145,12 +1145,7 @@ def get_model(str_model, cfg):
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
-        if cfg.crop_size is None:
-            bscan3d_inputs = Input(shape=cfg.sample_size[0])
-        else:
-            sample_size_cropped = list(cfg.sample_size[0])
-            sample_size_cropped[0] = sample_size_cropped[0] - cfg.crop_size[0] - cfg.crop_size[1]
-            bscan3d_inputs = Input(shape=tuple(sample_size_cropped))
+        bscan3d_inputs = Input(shape=cfg.sample_size[2])
         
         # angiography pathway
         x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
@@ -2040,7 +2035,7 @@ def get_model(str_model, cfg):
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
-        bscan3d_inputs = Input(shape=cfg.sample_size[0])
+        bscan3d_inputs = Input(shape=cfg.sample_size[2])
 
         # angiography pathway
         x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
@@ -2266,12 +2261,7 @@ def get_model(str_model, cfg):
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
-        if cfg.crop_size is None:
-            bscan3d_inputs = Input(shape=cfg.sample_size[0])
-        else:
-            sample_size_cropped = list(cfg.sample_size[0])
-            sample_size_cropped[0] = sample_size_cropped[0] - cfg.crop_size[0] - cfg.crop_size[1]
-            bscan3d_inputs = Input(shape=tuple(sample_size_cropped))
+        bscan3d_inputs = Input(shape=cfg.sample_size[2])
 
         if cfg.crop_size is None:
             x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform')(bscan3d_inputs)
@@ -2362,7 +2352,7 @@ def get_model(str_model, cfg):
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
-        bscan3d_inputs = Input(shape=cfg.sample_size[0])
+        bscan3d_inputs = Input(shape=cfg.sample_size[2])
 
         # angiography pathway
         x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
@@ -2480,7 +2470,7 @@ def get_model(str_model, cfg):
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
-        bscan3d_inputs = Input(shape=cfg.sample_size[0])
+        bscan3d_inputs = Input(shape=cfg.sample_size[2])
 
         # angiography pathway
         x = Conv3D(5, kernel_size=(40, 40, 2), kernel_initializer='he_uniform',
@@ -2626,7 +2616,7 @@ def get_model(str_model, cfg):
         angiography_inputs = Input(shape=cfg.sample_size[0])
         structure_inputs = Input(shape=cfg.sample_size[0])
         bscan_inputs = Input(shape=cfg.sample_size[1])
-        bscan3d_inputs = Input(shape=cfg.sample_size[0])
+        bscan3d_inputs = Input(shape=cfg.sample_size[2])
 
         # angiography pathway
         x = Conv3D(5, kernel_size=(40, 40, 2), padding='same', kernel_initializer='he_uniform',

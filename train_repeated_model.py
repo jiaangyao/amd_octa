@@ -12,10 +12,10 @@ import time
 
 # Configuring the files here for now
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
-# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/FinalData/')
-# cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
-cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
-cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
+cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/FinalData/')
+cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
+# cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
+# cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
 
 # specify the loading mode: 'csv' vs 'folder'
 # if csv, then loading based on a csv file
@@ -23,7 +23,7 @@ cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
 cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa')
-cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
+# cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
 cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 
 # name of particular feature that will be used
@@ -88,13 +88,13 @@ cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.decimate = False
 cfg.random_seed = 68
-cfg.use_random_seed = False
+cfg.use_random_seed = True
 cfg.binary_class = False
 cfg.n_repeats = 10
 
-vec_idx_healthy = [1, 250]
-vec_idx_dry_amd = [1, 250]
-vec_idx_cnv = [1, 250]
+# vec_idx_healthy = [1, 250]
+# vec_idx_dry_amd = [1, 250]
+# vec_idx_cnv = [1, 250]
 vec_idx_patient = [1, 310]
 
 vec_train_acc = []
@@ -174,6 +174,7 @@ y_true = np.concatenate(vec_y_true, axis=0)
 y_pred = np.concatenate(vec_y_pred, axis=0)
 
 f_model = "{}_{}".format(cfg.str_model, time.strftime("%Y%m%d_%H%M%S"))
+# cfg.p_figure = pathlib.Path('/home/jyao/Downloads/conf_matrix_repeated_seed_fixed/') / cfg.str_model / f_model
 cfg.p_figure = pathlib.Path('/home/kavi/Downloads/conf_matrix_repeated_seed_fixed/') / cfg.str_model / f_model
 cfg.p_figure.mkdir(exist_ok=True, parents=True)
 
