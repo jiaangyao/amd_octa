@@ -12,10 +12,10 @@ import time
 
 # Configuring the files here for now
 cfg = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
-cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/FinalData/')
-cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
-# cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
-# cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
+# cfg.d_data = pathlib.Path('/home/jyao/local/data/amd_octa/FinalData/')
+# cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
+cfg.d_data = pathlib.Path('/home/kavi/Downloads/amd_octa_data/patient_id/')
+cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
 
 # specify the loading mode: 'csv' vs 'folder'
 # if csv, then loading based on a csv file
@@ -23,7 +23,7 @@ cfg.d_model = pathlib.Path('/home/jyao/local/data/amd_octa/trained_models/')
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
 cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa')
-# cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
+cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
 cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 
 # name of particular feature that will be used
@@ -74,7 +74,7 @@ cfg.per_train = 0.6
 cfg.per_valid = 0.2
 cfg.per_test = 0.2
 
-cfg.n_epoch = 1000
+cfg.n_epoch = 1
 cfg.batch_size = 8
 cfg.es_patience = 20
 cfg.es_min_delta = 1e-5
@@ -90,7 +90,7 @@ cfg.decimate = False
 cfg.random_seed = 68
 cfg.use_random_seed = True
 cfg.binary_class = False
-cfg.n_repeats = 10
+cfg.n_repeats = 2
 
 # vec_idx_healthy = [1, 250]
 # vec_idx_dry_amd = [1, 250]
@@ -135,7 +135,7 @@ for i in range(cfg.n_repeats):
     print("x_test B scan shape: {}".format(Xs[2][2].shape))
     print("y_test onehot shape: {}".format(ys[2].shape))
 
-    model = get_model('arch_022', cfg)
+    model = get_model('arch_022orig', cfg)
     callbacks = get_callbacks(cfg)
 
     h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
