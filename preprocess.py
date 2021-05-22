@@ -597,30 +597,90 @@ def data_loading(vec_idx_patient, cfg):
 
         cfg.vec_str_patients = vec_str_patients
         cfg.vec_out_csv_idx = vec_out_csv_idx
-        cfg.y_unique_label = np.unique(y)
+        if not cfg.binary_class:
+            cfg.y_unique_label = np.unique(y)
 
-        # check if there are only two labels present, which is the case for many features
-        if len(np.unique(y)) == 2 and cfg.str_feature != 'disease':
-            cfg.num_classes = 2
-            cfg.binary_class = True
+            # check if there are only two labels present, which is the case for many features
+            if len(np.unique(y)) == 2 and cfg.str_feature != 'disease':
+                cfg.num_classes = 2
+                cfg.binary_class = True
 
-            vec_str_labels_temp = []
-            for i in range(cfg.num_classes):
-                vec_str_labels_temp.append(cfg.vec_str_labels[np.unique(y)[i]])
-            cfg.vec_str_labels = vec_str_labels_temp
-
-            # correct for labels where there are skips
-            y_temp = y.copy()
-            if not np.all(np.unique(y) == np.arange(0, cfg.num_classes)):
+                vec_str_labels_temp = []
                 for i in range(cfg.num_classes):
-                    y_temp[y_temp == np.unique(y)[i]] = np.arange(0, cfg.num_classes)[i]
-            y = y_temp
+                    vec_str_labels_temp.append(cfg.vec_str_labels[np.unique(y)[i]])
+                cfg.vec_str_labels = vec_str_labels_temp
 
-        elif len(np.unique(y)) == 2 and cfg.str_feature == 'disease':
-            raise Exception('There should be three disease labels')
+                # correct for labels where there are skips
+                y_temp = y.copy()
+                if not np.all(np.unique(y) == np.arange(0, cfg.num_classes)):
+                    for i in range(cfg.num_classes):
+                        y_temp[y_temp == np.unique(y)[i]] = np.arange(0, cfg.num_classes)[i]
+                y = y_temp
 
-        elif len(np.unique(y)) == 4:
-            raise Exception('Too many labels')
+            elif len(np.unique(y)) == 2 and cfg.str_feature == 'disease':
+                raise Exception('There should be three disease labels')
+
+            elif len(np.unique(y)) == 4:
+                raise Exception('Too many labels')
+        else:
+            cfg.y_unique_label = np.arange(0, 2, 1)
+            y_temp = y.copy()
+            if cfg.binary_mode == 0:
+                idx_label_0 = y_temp == 0
+                idx_label_1 = y_temp == 1
+                cfg.vec_str_labels = ['Normal', 'NNV AMD']
+
+            elif cfg.binary_mode == 1:
+                idx_label_0 = y_temp == 0
+                idx_label_1 = y_temp == 2
+                cfg.vec_str_labels = ['Normal', 'NV AMD']
+
+            elif cfg.binary_mode == 2:
+                idx_label_0 = y_temp == 1
+                idx_label_1 = y_temp == 2
+                cfg.vec_str_labels = ['NNV AMD', 'NV AMD']
+
+            X_angio_label0 = X[0][idx_label_0, ...]
+            X_struct_label0 = X[1][idx_label_0, ...]
+            X_bscan_label0 = X[2][idx_label_0, ...]
+            X_bscan3d_label0 = X[3][idx_label_0, ...]
+            y_label0 = np.zeros_like(y[idx_label_0])
+
+            X_angio_label1 = X[0][idx_label_1, ...]
+            X_struct_label1 = X[1][idx_label_1, ...]
+            X_bscan_label1 = X[2][idx_label_1, ...]
+            X_bscan3d_label1 = X[3][idx_label_1, ...]
+            y_label1 = np.ones_like(y[idx_label_1])
+
+            idx_full = np.arange(0, len(cfg.vec_str_patients), 1)
+            idx_binary_label0 = idx_full[idx_label_0]
+            idx_binary_label1 = idx_full[idx_label_1]
+            idx_binary = np.concatenate([idx_binary_label0, idx_binary_label1])
+            idx_binary_sort = np.argsort(idx_binary)
+            idx_binary = idx_binary[idx_binary_sort]
+
+            X_angio = np.concatenate([X_angio_label0, X_angio_label1])
+            X_angio = X_angio[idx_binary_sort, ...]
+            X_struct = np.concatenate([X_struct_label0, X_struct_label1])
+            X_struct = X_struct[idx_binary_sort, ...]
+            X_bscan = np.concatenate([X_bscan_label0, X_bscan_label1])
+            X_bscan = X_bscan[idx_binary_sort, ...]
+            X_bscan3d = np.concatenate([X_bscan3d_label0, X_bscan3d_label1])
+            X_bscan3d = X_bscan3d[idx_binary_sort, ...]
+            X = [X_angio, X_struct, X_bscan, X_bscan3d]
+
+            y = np.concatenate([y_label0, y_label1])
+            y = y[idx_binary_sort]
+
+            vec_str_patients_temp = []
+            vec_out_csv_idx_temp = []
+            for i in range(len(cfg.vec_str_patients)):
+                if i in idx_binary:
+                    vec_str_patients_temp.append(cfg.vec_str_patients[i])
+                    vec_out_csv_idx_temp.append(cfg.vec_out_csv_idx)
+
+            cfg.vec_str_patients = vec_str_patients_temp
+            cfg.vec_out_csv_idx = vec_out_csv_idx_temp
 
     else:
         raise Exception('Undefined load mode')
