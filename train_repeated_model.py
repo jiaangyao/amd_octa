@@ -22,7 +22,7 @@ cfg.d_model = pathlib.Path('/home/kavi/Downloads/amd_octa_data/trained_models/')
 # if folder, then loading based on existing folder structure
 cfg.load_mode = 'csv'
 # cfg.load_mode = 'folder'
-cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa')
+# cfg.d_csv = pathlib.Path('/home/jyao/local/data/amd_octa')
 cfg.d_csv = pathlib.Path('/home/kavi/Downloads/amd_octa_data/')
 cfg.f_csv = 'DiseaseLabelsThrough305.csv'
 
@@ -67,6 +67,7 @@ cfg.dict_str_patient_label = {}
 
 cfg.downscale_size = [256, 256]
 cfg.downscale_size_bscan = [450, 300]
+# if you don't want cropping then comment the two lines below and set cfg.crop_size to None instead...
 cfg.crop_size = [int(np.round(cfg.downscale_size_bscan[0] * 1.5/7.32)),
                  int(np.round(cfg.downscale_size_bscan[0] * 1.8/7.32))]
 # cfg.crop_size = None
@@ -74,7 +75,7 @@ cfg.per_train = 0.6
 cfg.per_valid = 0.2
 cfg.per_test = 0.2
 
-cfg.n_epoch = 1
+cfg.n_epoch = 1000
 cfg.batch_size = 8
 cfg.es_patience = 20
 cfg.es_min_delta = 1e-5
@@ -88,9 +89,9 @@ cfg.oversample = False
 cfg.oversample_method = 'smote'
 cfg.decimate = False
 cfg.random_seed = 68
-cfg.use_random_seed = True
+cfg.use_random_seed = False
 cfg.binary_class = False
-cfg.n_repeats = 2
+cfg.n_repeats = 10
 
 # vec_idx_healthy = [1, 250]
 # vec_idx_dry_amd = [1, 250]
@@ -135,7 +136,7 @@ for i in range(cfg.n_repeats):
     print("x_test B scan shape: {}".format(Xs[2][2].shape))
     print("y_test onehot shape: {}".format(ys[2].shape))
 
-    model = get_model('arch_022orig', cfg)
+    model = get_model('arch_025', cfg)
     callbacks = get_callbacks(cfg)
 
     h = model.fit(Xs[0], ys[0], batch_size=cfg.batch_size, epochs=cfg.n_epoch, verbose=2, callbacks=callbacks,
