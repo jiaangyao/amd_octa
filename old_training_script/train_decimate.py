@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 
 from config.load_config import get_config
-from preprocess import preprocess
-from model import get_model, get_callbacks, get_model_binary
-from plotting import plot_norm_conf_matrix, plot_raw_conf_matrix, plot_training_loss, plot_training_acc
+from preproc import preprocess
+from modeling.model import get_callbacks, get_model_binary
+from analysis.plotting import plot_norm_conf_matrix, plot_raw_conf_matrix, plot_training_loss, plot_training_acc
 
 
 # Configuring the files here for now

@@ -76,15 +76,17 @@ def plot_norm_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None, cv_all=
     plt.colorbar()
 
     if cfg.str_model == 'arch_009':
-        str_title = 'Normalized Confusion Matrix: {}'.format('OCTA')
+        str_title = 'Raw Confusion Matrix: {}'.format('OCTA')
     elif cfg.str_model == 'arch_010':
-        str_title = 'Normalized Confusion Matrix: {}'.format('OCTA+OCT')
+        str_title = 'Raw Confusion Matrix: {}'.format('OCTA+OCT')
     elif cfg.str_model == 'arch_012' or cfg.str_model == 'arch_013' or cfg.str_model == 'arch_023':
-        str_title = 'Normalized Confusion Matrix: {}'.format('B-scan')
-    elif cfg.str_model == 'arch_022':
-        str_title = 'Normalized Confusion Matrix: {}'.format('OCTA+OCT+B-scan')
+        str_title = 'Raw Confusion Matrix: {}'.format('B-scan')
+    elif cfg.str_model == 'arch_022orig':
+        str_title = 'Raw Confusion Matrix: {}'.format('OCTA+OCT+B-scan')
+    elif cfg.str_model == 'arch_022' or cfg.str_model == 'arch_025':
+        str_title = 'Raw Confusion Matrix: {}'.format('OCTA+OCT+3D B-scan')
     else:
-        str_title = 'Normalized Confusion Matrix'
+        str_title = 'Raw Confusion Matrix'
 
     plt.title(str_title)
 
@@ -161,8 +163,10 @@ def plot_raw_conf_matrix(y_true, y_pred, cfg, save=True, f_figure=None, cv_all=F
         str_title = 'Raw Confusion Matrix: {}'.format('OCTA+OCT')
     elif cfg.str_model == 'arch_012' or cfg.str_model == 'arch_013' or cfg.str_model == 'arch_023':
         str_title = 'Raw Confusion Matrix: {}'.format('B-scan')
-    elif cfg.str_model == 'arch_022':
+    elif cfg.str_model == 'arch_022orig':
         str_title = 'Raw Confusion Matrix: {}'.format('OCTA+OCT+B-scan')
+    elif cfg.str_model == 'arch_022' or cfg.str_model == 'arch_025':
+        str_title = 'Raw Confusion Matrix: {}'.format('OCTA+OCT+3D B-scan')
     else:
         str_title = 'Raw Confusion Matrix'
 

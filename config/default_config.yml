@@ -27,7 +27,7 @@ len_epoch: 3
 mad_threshold: 5
 
 # percentage of all epochs in the training set
-per_training: 0.7
+per_train: 0.7
 
 # percentage of all epochs in the validation set
 per_valid: 0.15

@@ -1,14 +1,12 @@
 import os
 from pathlib import Path
-import numpy as np
 
 from config.load_config import get_config
-from preprocess import preprocess
-from model import get_model, get_callbacks
-from utils.io_funcs import *
+from preproc import preprocess
+from modeling.model import get_model, get_callbacks
+from save_load.io_funcs import *
 import matplotlib.pyplot as plt
-from plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix, plot_norm_conf_matrix
-
+from analysis.plotting import plot_raw_conf_matrix
 
 # Configuring the files here for now
 cfg = get_config(filename=Path(os.getcwd()) / 'config' / 'default_config.yml')

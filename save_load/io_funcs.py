@@ -1,8 +1,7 @@
-import pathlib
-import tensorflow
 import numpy as np
 import time
 import pickle
+import scipy.io as sio
 
 
 def save_model(model, cfg, overwrite=True, save_format='tf', idx_cv_fold=None):
@@ -21,6 +20,7 @@ def save_model(model, cfg, overwrite=True, save_format='tf', idx_cv_fold=None):
         p_model.mkdir(parents=True, exist_ok=True)
 
         cfg.p_cfg = p_model
+        cfg.f_model = f_model
 
     else:
         if idx_cv_fold == 0:
@@ -45,8 +45,23 @@ def save_model(model, cfg, overwrite=True, save_format='tf', idx_cv_fold=None):
 def save_cfg(cfg, overwrite=True):
     pf_cfg = cfg.p_cfg / 'cfg_file'
     if not (pf_cfg.exists() and not overwrite):
-        with open(str(cfg.p_cfg / 'cfg_file'), 'wb') as handle:
+        with open(str(pf_cfg), 'wb') as handle:
             pickle.dump(cfg, handle)
+
+
+def save_mat(cfg, overwrite=True):
+    # prepare the mat file
+    dict_out = {'y_test_true': cfg.y_test_true, 'y_test_pred': cfg.y_test_pred, 'y_test_pred_prob': cfg.y_test_pred_prob}
+
+    if cfg.balanced:
+        str_balance = 'balanced'
+    else:
+        str_balance = 'unbalanced'
+
+    f_mat_handle = "{}_binary_mode{}_{}.mat".format(cfg.f_model, cfg.binary_mode, str_balance)
+    pf_mat = cfg.p_cfg / f_mat_handle
+    if not (pf_mat.exists() and not overwrite):
+        sio.savemat(str(pf_mat), dict_out)
 
 
 def load_model(model, cfg, name, **kwargs):

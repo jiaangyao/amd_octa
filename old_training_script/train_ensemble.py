@@ -1,12 +1,11 @@
 import os
 from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
 
 from config.load_config import get_config
-from preprocess import preprocess
-from model import get_model, get_callbacks
-from plotting import plot_norm_conf_matrix, plot_raw_conf_matrix
+from preproc import preprocess
+from modeling.model import get_model, get_callbacks
+from analysis.plotting import plot_norm_conf_matrix, plot_raw_conf_matrix
 from scipy.stats import mode
 
 

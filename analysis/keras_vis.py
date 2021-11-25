@@ -2,14 +2,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 import os
 from config.load_config import get_config
-from utils.io_funcs import load_model
+from save_load.io_funcs import load_model
 from pathlib import Path
 import tensorflow as tf
 from tf_keras_vis.utils import num_of_gpus
-from model import get_model
+from modeling.model import get_model
 
-from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
-from skimage import io, transform, color
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from skimage import color
 
 from tf_keras_vis.utils import normalize
 

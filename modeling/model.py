@@ -1,3 +1,8 @@
+import os
+from utils.gpu_utils import pick_gpu_lowest_memory
+
+os.environ["CUDA_VISIBLE_DEVICES"] = str(pick_gpu_lowest_memory())
+
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Flatten, Conv3D, Conv2D, AvgPool2D, MaxPooling3D, Dropout, BatchNormalization, Softmax
@@ -19,6 +24,8 @@ def get_model(str_model, cfg):
 
         except RuntimeError as e:
             print(e)
+
+    # pick the GPU with lowest memory usage
 
     cfg.str_model = str_model
 
