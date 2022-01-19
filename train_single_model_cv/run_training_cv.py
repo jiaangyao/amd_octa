@@ -9,7 +9,7 @@ from config.config_utils import initialize_config_preproc, initialize_config_spl
 from preproc.preprocess import generate_labels, correct_data_label
 from preproc.train_val_test_split import prepare_data_for_train_cv
 from modeling.model import get_model, get_callbacks
-from save_load.io_funcs import save_cfg, save_csv, save_model
+from save_load.io_funcs import save_cfg, save_csv, save_model, save_mat
 from utils.get_patient_id import get_patient_id_by_label
 from analysis.plotting import plot_training_loss, plot_training_acc, plot_raw_conf_matrix, plot_norm_conf_matrix
 
@@ -20,6 +20,12 @@ def run_training_cv(vec_Xs, vec_ys, cfg):
     # find the aggregate results on the entire dataset
     vec_y_true = []
     vec_y_pred = []
+    vec_y_pred_prob = []
+
+    # also declare empty list for the validation set
+    vec_y_valid_true = []
+    vec_y_valid_pred = []
+    vec_y_valid_pred_prob = []
 
     for idx_fold in range(len(vec_Xs)):
         print('\n\nFold: {}\n'.format(idx_fold))
@@ -72,15 +78,40 @@ def run_training_cv(vec_Xs, vec_ys, cfg):
         cfg.vec_acc = [train_set_score[1], valid_set_score[1], test_set_score[1]]
 
         if cfg.num_classes == 2:
+            # make predictions for test set
             y_true = ys[-1]
-            y_pred = model_curr.predict(Xs[2])
+            y_pred_logits = model_curr.predict(Xs[2])
+
+            y_pred = y_pred_logits.copy()
             y_pred[y_pred >= 0.5] = 1
             y_pred[y_pred < 0.5] = 0
             y_pred = y_pred.reshape(-1)
 
+            # now transform the logits into a matrix of two class probabilities and append
+            y_pred_logits = np.concatenate([1 - y_pred_logits, y_pred_logits], axis=1)
+
+            # make predictions for validation set
+            y_valid_true = ys[1]
+            y_valid_pred_logits = model_curr.predict(Xs[1])
+
+            y_valid_pred = y_valid_pred_logits.copy()
+            y_valid_pred[y_valid_pred >= 0.5] = 1
+            y_valid_pred[y_valid_pred < 0.5] = 0
+            y_valid_pred = y_valid_pred.reshape(-1)
+
+            # nwo transform the logits into two class probabilities and append for validation set
+            y_valid_pred_logits = np.concatenate([1 - y_valid_pred_logits, y_valid_pred_logits], axis=1)
+
         else:
+            # make the predictions for the test set
             y_true = np.argmax(ys[-1], axis=1)
             y_pred = np.argmax(model_curr.predict(Xs[2]), axis=1)
+            y_pred_logits = model_curr.predict(Xs[2])
+
+            # make the predictions for the validation set
+            y_valid_true = np.argmax(ys[1], axis=1)
+            y_valid_pred = np.argmax(model_curr.predict(Xs[1]), axis=1)
+            y_valid_pred_logits = model_curr.predict(Xs[1])
 
         # plot the confusion matrices
         plot_raw_conf_matrix(y_true, y_pred, cfg, save=True)
@@ -89,10 +120,17 @@ def run_training_cv(vec_Xs, vec_ys, cfg):
         # now append the results to a list
         vec_y_true.append(y_true)
         vec_y_pred.append(y_pred)
+        vec_y_pred_prob.append(y_pred_logits)
+
+        # append the results from the validation set also
+        vec_y_valid_true.append(y_valid_true)
+        vec_y_valid_pred.append(y_valid_pred)
+        vec_y_valid_pred_prob.append(y_valid_pred_logits)
 
     # Now we are outside of the loop
     y_true_unsorted_all = np.concatenate(vec_y_true, axis=-1)
     y_pred_unsorted_all = np.concatenate(vec_y_pred, axis=-1)
+    y_pred_prob_unsorted_all = np.concatenate(vec_y_pred_prob, axis=0)
 
     # Now obtain the correct indices
     vec_idx_absolute_test_all = []
@@ -106,9 +144,20 @@ def run_training_cv(vec_Xs, vec_ys, cfg):
 
     y_true_all = y_true_unsorted_all[idx_permutation_sort]
     y_pred_all = y_pred_unsorted_all[idx_permutation_sort]
+    y_pred_prob_all = y_pred_prob_unsorted_all[idx_permutation_sort, ...]
 
     cfg.y_test_true = y_true_all
     cfg.y_test_pred = y_pred_all
+    cfg.y_test_pred_prob = y_pred_prob_all
+
+    # also generate the data for the validation set predictions
+    y_valid_true_unsorted_all = np.concatenate(vec_y_valid_true, axis=-1)
+    y_valid_pred_unsorted_all = np.concatenate(vec_y_valid_pred, axis=-1)
+    y_valid_pred_prob_unsorted_all = np.concatenate(vec_y_valid_pred_prob, axis=0)
+
+    cfg.y_valid_true = y_valid_true_unsorted_all
+    cfg.y_valid_pred = y_valid_pred_unsorted_all
+    cfg.y_valid_pred_prob = y_valid_pred_prob_unsorted_all
 
     test_acc_full = np.sum(y_true_all == y_pred_all) / len(y_true_all)
     print("\nOverall accuracy: {}".format(test_acc_full))
@@ -142,12 +191,15 @@ def run_training_cv(vec_Xs, vec_ys, cfg):
     # save the cfg, which contains configurations and results
     save_cfg(cfg, overwrite=True)
 
+    # save the mat file, which contains all useful output information
+    save_mat(cfg, overwrite=True, bool_save_valid=True)
+
     return cfg
 
 
 if __name__ == '__main__':
     # Configuring the files here for now
-    cfg_template = get_config(filename=pathlib.Path(os.getcwd()) / 'config' / 'default_config.yml')
+    cfg_template = get_config(filename=pathlib.Path(os.getcwd()).parent / 'config' / 'default_config.yml')
     cfg_template.user = 'jyao'
     cfg_template.load_mode = 'csv'
     cfg_template.overwrite = True

@@ -49,16 +49,26 @@ def save_cfg(cfg, overwrite=True):
             pickle.dump(cfg, handle)
 
 
-def save_mat(cfg, overwrite=True):
+def save_mat(cfg, overwrite=True, bool_save_valid=False):
     # prepare the mat file
-    dict_out = {'y_test_true': cfg.y_test_true, 'y_test_pred': cfg.y_test_pred, 'y_test_pred_prob': cfg.y_test_pred_prob}
+    if not bool_save_valid:
+        dict_out = {'y_test_true': cfg.y_test_true, 'y_test_pred': cfg.y_test_pred,
+                    'y_test_pred_prob': cfg.y_test_pred_prob}
+    else:
+        dict_out = {'y_test_true': cfg.y_test_true, 'y_test_pred': cfg.y_test_pred,
+                    'y_test_pred_prob': cfg.y_test_pred_prob,
+                    'y_valid_true': cfg.y_valid_true, 'y_valid_pred': cfg.y_valid_pred,
+                    'y_valid_pred_prob': cfg.y_valid_pred_prob}
 
     if cfg.balanced:
         str_balance = 'balanced'
     else:
         str_balance = 'unbalanced'
 
-    f_mat_handle = "{}_binary_mode{}_{}.mat".format(cfg.f_model, cfg.binary_mode, str_balance)
+    if not cfg.cv_mode:
+        f_mat_handle = "{}_binary_mode{}_{}.mat".format(cfg.f_model, cfg.binary_mode, str_balance)
+    else:
+        f_mat_handle = "{}_cv_mode_{}_{}.mat".format(cfg.f_model_cv, cfg.str_feature.lower(), str_balance)
     pf_mat = cfg.p_cfg / f_mat_handle
     if not (pf_mat.exists() and not overwrite):
         sio.savemat(str(pf_mat), dict_out)
